@@ -38,6 +38,7 @@ public class OverlayScrollIntegrationTest {
         final DynamicChatOverlay overlay;
         Fixture() throws Exception {
             set(plugin,"client",client);set(plugin,"config",new ImprovedChatConfig(){});
+            set(plugin,"chatboxVisibility",new com.improvedchat.chatbox.ChatboxVisibility());
             when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
             config.setAlwaysVisible(true);config.setScrollHistory(true);config.setWidgetWidth(300);config.setMaxMessages(4);
             config.setShowInputPreview(true);config.setFadeOutDuration(1);

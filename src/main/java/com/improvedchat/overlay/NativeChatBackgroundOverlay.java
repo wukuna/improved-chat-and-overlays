@@ -117,7 +117,9 @@ public class NativeChatBackgroundOverlay extends Overlay {
 
     @Override public Dimension render(Graphics2D graphics) {
         try {
-            if (prepared && running) graphics.drawImage(cachedImage, paintBounds.x, paintBounds.y, null);
+            Widget area = client.getWidget(InterfaceID.Chatbox.CHATAREA);
+            if (prepared && running && area != null && !area.isHidden())
+                graphics.drawImage(cachedImage, paintBounds.x, paintBounds.y, null);
         } finally { restore(); }
         return null;
     }

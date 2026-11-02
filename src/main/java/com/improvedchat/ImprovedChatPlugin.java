@@ -307,6 +307,51 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
+    @Inject private net.runelite.client.input.KeyManager keyManager;
+    @Inject private com.improvedchat.chatbox.ChatboxVisibility chatboxVisibility;
+    private final VisibilityHotkeys visibilityHotkeys = new VisibilityHotkeys(this::queueVisibilityToggle);
+
+    private void refreshVisibilityHotkeys() {
+        if (nativeChatActive) visibilityHotkeys.configure(overlayConfigs, config.hideChatboxHotkey());
+    }
+
+    private void queueVisibilityToggle(VisibilityHotkeys.Activation activation) {
+        clientThread.invokeLater(() -> {
+            if (!nativeChatActive || !visibilityHotkeys.isCurrent(activation)
+                || client.getGameState() != GameState.LOGGED_IN) return;
+            if (activation.hideChatbox && !modernChatCompatibility.snapshot().blocksVisibility())
+                chatboxVisibility.toggle();
+            boolean changed = false;
+            for (OverlayConfig overlay : overlayConfigs) {
+                if (activation.overlayIds.contains(overlay.getId())) {
+                    overlay.setShow(!overlay.isShow());
+                    changed = true;
+                }
+            }
+            if (changed) {
+                onOverlayConfigChanged();
+                refreshPanel();
+            }
+        });
+    }
+
+    @Subscribe public void onProfileChanged(net.runelite.client.events.ProfileChanged event) {
+        visibilityHotkeys.reset();
+        long generation = ++nativeChatGeneration;
+        clientThread.invokeLater(() -> {
+            if (!nativeChatActive || generation != nativeChatGeneration) return;
+            chatboxVisibility.reset();
+            for (DynamicChatOverlay overlay : overlays) overlayManager.remove(overlay);
+            overlays.clear();
+            overlayMessageFilters.clear();
+            clearedThrough.clear();
+            loadOverlayConfigs();
+            for (OverlayConfig overlay : overlayConfigs) addOverlay(overlay);
+            refreshVisibilityHotkeys();
+            refreshPanel();
+        });
+    }
+
     private volatile boolean nativeChatActive;
     private volatile long nativeChatGeneration;
 
@@ -327,6 +372,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             addOverlay(oc);
         }
 
+        refreshVisibilityHotkeys();
+        keyManager.registerKeyListener(visibilityHotkeys);
+        eventBus.register(chatboxVisibility);
         mouseManager.registerMouseWheelListener(this);
         updatePmWidgetVisibility();
 
@@ -357,6 +405,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     @Override
     protected void shutDown() {
         overlayWheelReady = false;
+        visibilityHotkeys.reset();
+        keyManager.unregisterKeyListener(visibilityHotkeys);
+        eventBus.unregister(chatboxVisibility);
+        clientThread.invokeLater(chatboxVisibility::reset);
         mouseManager.unregisterMouseWheelListener(this);
         overlayManager.remove(nativeChatBorderOverlay);
         overlayManager.remove(nativeChatBackgroundOverlay);
@@ -611,6 +663,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     public void saveOverlayConfigs() {
+        refreshVisibilityHotkeys();
         if (overlayPersistenceBlocked) return;
         String json = gson.toJson(overlayConfigs);
         try { OverlayConfigStore.validateSize(json); }
@@ -916,6 +969,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     private void reconcileNativeChatOwnership(ModernChatOwnership ownership) {
         if (!nativeChatActive) return;
+        if (ownership.blocksVisibility()) clientThread.invokeLater(chatboxVisibility::reset);
         if (config.enableResizableChat() && !ownership.blocksGeometry()) {
             chatResizeModule.startUp();
         } else {
@@ -954,6 +1008,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             chatboxOpacityModule.shutDown();
         }
         if (ownership.blocksVisibility()) {
+            clientThread.invokeLater(chatboxVisibility::reset);
             chatCollapseModule.shutDown();
         }
         if (ownership.blocksGeometry()) {
@@ -962,6 +1017,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void suspendForModernChatConfigTransition(String key) {
+        clientThread.invokeLater(chatboxVisibility::reset);
         if (modernChatCompatibility.isRedesignKey(key)) {
             offlineChatStatusModule.shutDown();
             cleanChatModule.shutDown();
@@ -1026,6 +1082,11 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
         if (!event.getGroup().equals(CONFIG_GROUP)) {
             return;
+        }
+        if ("hideChatboxHotkey".equals(event.getKey())) {
+            refreshVisibilityHotkeys();
+            if (net.runelite.client.config.Keybind.NOT_SET.equals(config.hideChatboxHotkey()))
+                clientThread.invokeLater(chatboxVisibility::reset);
         }
         if ("useChatFilter".equals(event.getKey())) refreshPanel();
         if ("hideSidePanel".equals(event.getKey())) {
@@ -1257,7 +1318,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     public boolean isChatboxHidden() {
-        return isChatboxMinimized() || isChatboxWidgetHidden();
+        return chatboxVisibility.isHidden() || isChatboxMinimized() || isChatboxWidgetHidden();
     }
 
     private boolean isChatboxMinimized() {

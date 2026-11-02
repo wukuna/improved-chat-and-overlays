@@ -315,6 +315,7 @@ public class ImprovedChatPanel extends PluginPanel {
         messages.add(accordion(oc, "general", "MESSAGES & VISIBILITY", true,
                 textFieldRow("Name", oc.getName(), v -> { oc.setName(v); saveOverlay(); }),
                 checkRow("Enabled", oc.isShow(), v -> { oc.setShow(v); saveOverlay(); rebuild(); }),
+                overlayHotkeyRow(oc),
                 comboRow("Show overlay", new String[] {"With chatbox hidden", "With chatbox open or hidden"},
                         oc.isAlwaysVisible() ? "With chatbox open or hidden" : "With chatbox hidden",
                         v -> { oc.setAlwaysVisible("With chatbox open or hidden".equals(v)); saveOverlay(); }),
@@ -936,6 +937,31 @@ public class ImprovedChatPanel extends PluginPanel {
             }
         });
         return controlRow(name, swatch);
+    }
+
+    private Component overlayHotkeyRow(OverlayConfig oc) {
+        JButton key = button(oc.getToggleKeybind().toString());
+        key.setFocusTraversalKeysEnabled(false);
+        key.setToolTipText("Click, then press a key combination. Escape clears it. Overlays sharing a key toggle together; Show overlay still controls chatbox visibility.");
+        key.addActionListener(e -> { key.setText("Press a key"); key.requestFocusInWindow(); });
+        key.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                e.consume();
+                int code = e.getKeyCode();
+                if (code == java.awt.event.KeyEvent.VK_SHIFT || code == java.awt.event.KeyEvent.VK_CONTROL
+                    || code == java.awt.event.KeyEvent.VK_ALT || code == java.awt.event.KeyEvent.VK_META) return;
+                oc.setToggleKeybind(code == java.awt.event.KeyEvent.VK_ESCAPE
+                    ? net.runelite.client.config.Keybind.NOT_SET : new net.runelite.client.config.Keybind(e));
+                key.setText(oc.getToggleKeybind().toString());
+                saveOverlay();
+            }
+            @Override public void keyReleased(java.awt.event.KeyEvent e) { e.consume(); }
+            @Override public void keyTyped(java.awt.event.KeyEvent e) { e.consume(); }
+        });
+        key.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { key.setText(oc.getToggleKeybind().toString()); }
+        });
+        return controlRow("Toggle hotkey", key);
     }
 
     private Component controlRow(String name, Component control) {

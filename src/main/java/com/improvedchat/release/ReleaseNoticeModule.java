@@ -25,6 +25,8 @@ public final class ReleaseNoticeModule
         "Fixed camera zoom with the chatbox open and overlay history enabled.",
         "Rounded chatbox backgrounds now follow their borders.",
         "Removed the overlay history instruction footer.",
+        "Added overlay toggle hotkeys, including shared keys for multiple overlays.",
+        "Added a separate hotkey to hide the entire chatbox and its buttons.",
     };
 
     @Inject private Client client;

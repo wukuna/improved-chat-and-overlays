@@ -68,7 +68,7 @@ public class ChatboxPositionRegressionTest {
                 @Override void syncBorder(Widget w,boolean reposition,boolean dialog){} @Override void destroyBorder(){}
             };
             ChatDialogBoxes dialogs=new ChatDialogBoxes(client){
-                @Override boolean isDialogOpen(){return false;} @Override void resetDialogPositions(){}
+                @Override public boolean isDialogOpen(){return false;} @Override void resetDialogPositions(){}
             };
             TopLevelModals modals=new TopLevelModals(client){@Override public boolean isModalOpen(){return false;}};
             Map<Class<?>,Object> dependencies=new HashMap<>();

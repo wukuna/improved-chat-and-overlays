@@ -419,6 +419,9 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "chatboxBorderColor", name = "Border color", description = "Regular chatbox border color and opacity. Opacity also applies to RGB.", section = chatboxSection, position = 29)
     default Color chatboxBorderColor() { return Color.WHITE; }
 
+    @ConfigItem(keyName = "hideChatboxHotkey", name = "Hide entire chatbox hotkey", description = "Toggle the regular chatbox and every chat button. Dialogues remain usable. Separate from collapse; resets on logout or profile change. Suspended while Modern Chat controls visibility.", section = chatboxSection, position = 34)
+    default Keybind hideChatboxHotkey() { return Keybind.NOT_SET; }
+
     @ConfigItem(keyName = "chatboxBorderThickness", name = "Border thickness", description = "Thickness of the regular chatbox border", section = chatboxSection, position = 30)
     default com.improvedchat.model.BorderThickness chatboxBorderThickness() { return com.improvedchat.model.BorderThickness.NORMAL; }
 

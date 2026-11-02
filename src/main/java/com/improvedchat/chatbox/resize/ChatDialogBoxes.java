@@ -66,7 +66,7 @@ public class ChatDialogBoxes {
         dialogOpen = isDialogOpen();
     }
 
-    boolean isDialogOpen() {
+    public boolean isDialogOpen() {
         GameState state = client.getGameState();
         if (state != GameState.LOGGED_IN && state != GameState.LOADING) return false;
 

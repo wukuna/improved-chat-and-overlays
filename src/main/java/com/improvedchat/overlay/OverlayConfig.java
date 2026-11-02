@@ -63,6 +63,8 @@ public final class OverlayConfig {
     private boolean showInputPreview;
     private boolean previewOnlyWhenTyping;
     private boolean show = true;
+    private int toggleKeyCode;
+    private int toggleKeyModifiers;
     private boolean alwaysVisible;
     private FontSize fontSize = FontSize.REGULAR;
     private String fontFamily = "RuneScape";
@@ -304,6 +306,14 @@ public final class OverlayConfig {
     public boolean isPreviewOnlyWhenTyping() { return previewOnlyWhenTyping; }
     public void setPreviewOnlyWhenTyping(boolean value) { previewOnlyWhenTyping = value; }
 
+    public net.runelite.client.config.Keybind getToggleKeybind() {
+        return toggleKeyCode <= 0 ? net.runelite.client.config.Keybind.NOT_SET
+            : new net.runelite.client.config.Keybind(toggleKeyCode, toggleKeyModifiers);
+    }
+    public void setToggleKeybind(net.runelite.client.config.Keybind key) {
+        toggleKeyCode = key == null ? 0 : key.getKeyCode();
+        toggleKeyModifiers = key == null ? 0 : key.getModifiers();
+    }
     public boolean isShow() { return show; }
     public void setShow(boolean value) { show = value; }
 

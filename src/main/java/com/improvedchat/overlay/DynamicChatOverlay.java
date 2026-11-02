@@ -112,6 +112,7 @@ public class DynamicChatOverlay extends Overlay {
     }
 
     public void setOverlayConfig(OverlayConfig overlayConfig) {
+        if (!overlayConfig.isShow()) previewUntil = 0;
         this.overlayConfig = overlayConfig;
         scrollBounds = new java.awt.Rectangle();
         applyPlacementPolicy(false);

@@ -40,6 +40,7 @@ public class UserCombinationAuditTest {
  }
  @SuppressWarnings("unchecked") @Test public void characterizeAlertsWhenChatboxConditionHidesOverlay()throws Exception {
   P p=new P();ImprovedChatConfig c=new ImprovedChatConfig(){};set(p,ImprovedChatPlugin.class,"config",c);
+  set(p,ImprovedChatPlugin.class,"chatboxVisibility",new com.improvedchat.chatbox.ChatboxVisibility());
   Client client=(Client)Proxy.newProxyInstance(Client.class.getClassLoader(),new Class[]{Client.class},(o,m,a)->m.getName().equals("getGameState")?GameState.LOGGED_IN:def(m.getReturnType()));set(p,ImprovedChatPlugin.class,"client",client);
   OverlayConfig overlay=OverlayConfig.preset("Private","private");overlay.setAlwaysVisible(false);overlay.setShow(true);overlay.setNotification(Notification.ON);p.getOverlayConfigs().add(overlay);
   OverlayMessage msg=OverlayMessage.senderMessage("Alice",null,"hello",System.currentTimeMillis(),ChatMessageType.PRIVATECHAT,false);Field f=ImprovedChatPlugin.class.getDeclaredField("messages");f.setAccessible(true);((List<OverlayMessage>)f.get(p)).add(msg);p.notifyOverlays(msg);

@@ -6,7 +6,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 ## Features
 
-- **Recent updates:** up to five bundled change notes appear in the chatbox once per update in each RuneLite profile.
+- **Recent updates:** a compact bulleted list of changes appears in the chatbox once per update in each RuneLite profile.
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
 - **Overlay RGB effects (Beta)** together under **Style > RGB & Effects**: one-click **RGB for all messages**, matching-message effects, border animation and shared timing. Static RGB, two-color or full-spectrum cycling, and a wave are available. Rules are preserved when using the all-message shortcut; enable **Allow rule overrides** to let matches override it.
 - **Rounded corners** under **Style > Frame** round both the background and border, including animated RGB and flashing borders. Hover controls for brief explanations.
@@ -51,6 +51,12 @@ The sidebar has three simple tabs: **Overlays**, **Create** and **Tools**. Click
 Turn off **Messages → Show channel names** to remove the bracketed clan/friends-chat channel prefix from that overlay. Sender names, rank icons and messages remain available. Existing overlays inherit the global channel-name preference until you change this checkbox. **Style → Text Size → Small** works with every offered font, including bold styles.
 
 **Clear [overlay] history** clears only that overlay's view. Native chat-tab history clearing still applies to all overlays showing those message types. **Collapse Duplicates** groups consecutive matching messages within each overlay's filtered view and keeps channels, senders, and incoming/outgoing messages separate. Captured history remains intact so clearing or filtering one overlay cannot remove another overlay's messages. History is held for the current plugin session.
+
+### Visibility hotkeys
+
+Set **Messages → Messages & Visibility → Toggle hotkey** in each overlay's editor. Click the field and press a combination; Escape clears it. One press toggles every overlay assigned to that combination, including disabled overlays. The Enabled state is saved with the overlay; its **Show overlay** condition still applies. Holding a key does not repeat the toggle.
+
+In regular chatbox settings, **Hide entire chatbox hotkey** hides the chat area and all chat buttons, including All and Report. Press it again to restore their previous state. This is separate from **Collapse Chat Keybind**, works without enabling collapse, and leaves dialogue prompts usable. Full hiding resets on logout or profile change; clearing its binding or disabling the plugin also restores it. Modern Chat's visibility controls take precedence. Use distinct keys for collapse, resizing and full hiding.
 
 ### Scrollable session history
 
