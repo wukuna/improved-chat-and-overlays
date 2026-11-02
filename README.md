@@ -54,7 +54,7 @@ Turn off **Messages → Show channel names** to remove the bracketed clan/friend
 
 ### Scrollable session history
 
-In an overlay's **Messages → Session History** section, enable **Scroll history**. Use the mouse wheel over the visible overlay to read older lines, including long messages that wrap. New messages do not move your place while browsing. Scroll to the bottom or right-click the overlay and choose **Latest** to follow new messages again. The footer shows whether you are at the latest messages or reading history.
+In an overlay's **Messages → Session History** section, enable **Scroll history**. Use the mouse wheel over the visible overlay to read older lines, including long messages that wrap. New messages do not move your place while browsing. Scroll to the bottom or right-click the overlay and choose **Latest** to follow new messages again. History uses the available message rows without an instructional footer.
 
 **History messages** defaults to 1,000 and can be set from 200 to 5,000 per overlay, drawn from a shared pool of the last 5,000 captured messages. Your selected channels and filters still apply. **Visible lines** controls the number of lines shown at once; the frame keeps a steady height and messages remain readable without fading. The input preview stays at the bottom while history scrolls above it. Scroll history starts disabled, so existing fading overlays retain their behavior.
 

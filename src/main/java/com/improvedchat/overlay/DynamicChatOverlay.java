@@ -58,6 +58,7 @@ public class DynamicChatOverlay extends Overlay {
     private volatile long scrollPaintOrder;
     private volatile java.awt.Rectangle scrollBounds = new java.awt.Rectangle();
     private volatile long lastPaint;
+    private volatile boolean scrollVisible;
     private volatile long previewUntil;
     private List<OverlayMessage> previewMessages = new ArrayList<>();
 
@@ -107,6 +108,7 @@ public class DynamicChatOverlay extends Overlay {
                 OverlayMessage.senderMessage("Example player", null, "[Preview] A longer sample chat message to check wrapping and readability.",
                         now, ChatMessageType.PUBLICCHAT, false));
         previewUntil = now + 10000;
+        scrollBounds = new java.awt.Rectangle();
     }
 
     public void setOverlayConfig(OverlayConfig overlayConfig) {
@@ -147,6 +149,7 @@ public class DynamicChatOverlay extends Overlay {
     @Override
     public Dimension render(Graphics2D graphics) {
         applyPlacementPolicy(false);
+        updateScrollInputState();
         if (!shouldRender()) {
             scrollBounds = new java.awt.Rectangle();
             return null;
@@ -221,7 +224,7 @@ public class DynamicChatOverlay extends Overlay {
         }
         int lineDescent = Math.max(2, metrics.getDescent() + 1); // Shadows and underlines need the extra pixel.
         int lineHeight = lineAscent + lineDescent + metrics.getLeading();
-        int inputExtra = (inputSegments == null ? 0 : lineHeight) + (historyMode ? lineHeight : 0);
+        int inputExtra = inputSegments == null ? 0 : lineHeight;
         int contentHeight = useDynamicHeight && !historyMode
                 ? renderableLines.size() * lineHeight + inputExtra
                 : maxMessages * lineHeight + inputExtra;
@@ -259,15 +262,6 @@ public class DynamicChatOverlay extends Overlay {
         graphics.clipRect(paddingX, paddingY, Math.max(0, widgetWidth - paddingX * 2),
                 Math.max(0, paintHeight - paddingY * 2));
         int y = paintHeight - paddingY - lineDescent;
-        if (historyMode) {
-            String status = scrollback.isBrowsing() ? "History (" + scrollback.getNewerMessages() + " newer) - right-click Latest"
-                    : "Latest - scroll for history";
-            Shape statusClip = graphics.getClip();
-            graphics.clipRect(paddingX, y - lineAscent, Math.max(1, widgetWidth - 2 * paddingX), lineHeight);
-            ChatRenderUtils.drawText(graphics, status, new Color(180, 190, 200), 255, paddingX, y, drawShadow, metrics);
-            graphics.setClip(statusClip);
-            y -= lineHeight;
-        }
         if (inputSegments != null) {
             drawInputPreview(graphics, inputSegments, y, widgetWidth,
                     paddingX, lineAscent, lineHeight, fontSize, metrics, modIcons, drawShadow, currentTime);
@@ -358,8 +352,15 @@ public class DynamicChatOverlay extends Overlay {
     }
 
     public boolean canScrollAt(java.awt.Point point) {
-        return overlayConfig.isScrollHistory() && shouldRender()
+        return scrollVisible && overlayConfig.isScrollHistory() && overlayConfig.isShow()
+                && System.currentTimeMillis() >= previewUntil
                 && System.currentTimeMillis() - lastPaint <= 500 && scrollBounds.contains(point);
+    }
+
+    /** Called only on the client/render thread. Mouse callbacks must never read widgets. */
+    public void updateScrollInputState() {
+        scrollVisible = overlayConfig.isScrollHistory() && shouldRender() && System.currentTimeMillis() >= previewUntil;
+        if (!scrollVisible) scrollBounds = new java.awt.Rectangle();
     }
 
     public long getScrollPaintOrder() { return scrollPaintOrder; }

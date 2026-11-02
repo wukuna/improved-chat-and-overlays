@@ -55,6 +55,7 @@ public class OverlayScrollIntegrationTest {
         }
         MouseWheelEvent wheel(int x,int y,int rotation,int modifiers) {
             MouseWheelEvent e=new MouseWheelEvent(new Canvas(),MouseWheelEvent.MOUSE_WHEEL,0,modifiers,x,y,0,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,3,rotation);
+            plugin.onBeforeRender(new net.runelite.api.events.BeforeRender());
             plugin.mouseWheelMoved(e);return e;
         }
     }
@@ -76,7 +77,7 @@ public class OverlayScrollIntegrationTest {
         Rectangle input=inputRows(latest);
         sameRows(latest,history,input.y,input.y+input.height); // input row remains in place
         list(f.plugin,"messages").add(OverlayMessage.gameMessage("New arrival",1,ChatMessageType.GAMEMESSAGE,false));
-        sameRows(history,f.render(f.overlay),20,input.y+input.height); // only footer changes
+        sameRows(history,f.render(f.overlay),20,input.y+input.height); // arrival does not move the history page
         f.plugin.onOverlayMenuClicked(new OverlayMenuClicked(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY,"Latest","History"),f.overlay));
         BufferedImage resumed=f.render(f.overlay);
         assertFalse(java.util.Arrays.equals(history.getRGB(30,20,300,50,null,0,300),resumed.getRGB(30,20,300,50,null,0,300)));
@@ -117,4 +118,27 @@ public class OverlayScrollIntegrationTest {
         f.plugin.clearMessagesForTypes(java.util.EnumSet.of(ChatMessageType.GAMEMESSAGE));assertTrue(list(f.plugin,"messages").isEmpty());
         f.config.setHistoryLimit(-100);assertEquals(200,f.config.getHistoryLimit());f.config.setHistoryLimit(Integer.MAX_VALUE);assertEquals(5000,f.config.getHistoryLimit());
     }
+    @Test public void wheelNeverReadsClientOrWidgetsEvenWhenNativeChatIsOpen() throws Exception {
+        Fixture f=new Fixture(); f.config.setAlwaysVisible(false);
+        net.runelite.api.widgets.Widget area=mock(net.runelite.api.widgets.Widget.class);
+        when(f.client.getWidget(net.runelite.api.gameval.InterfaceID.Chatbox.CHATAREA)).thenReturn(area);
+        when(area.isHidden()).thenReturn(true); f.render(f.overlay);
+        f.plugin.onBeforeRender(new net.runelite.api.events.BeforeRender());
+        clearInvocations(f.client,area);
+        MouseWheelEvent outside=new MouseWheelEvent(new Canvas(),MouseWheelEvent.MOUSE_WHEEL,0,0,390,190,0,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,3,-1);
+        javax.swing.SwingUtilities.invokeAndWait(() -> f.plugin.mouseWheelMoved(outside));
+        assertFalse(outside.isConsumed()); verifyNoInteractions(f.client,area);
+        when(area.isHidden()).thenReturn(false); f.plugin.onBeforeRender(new net.runelite.api.events.BeforeRender());
+        clearInvocations(f.client,area);
+        MouseWheelEvent inside=new MouseWheelEvent(new Canvas(),MouseWheelEvent.MOUSE_WHEEL,0,0,60,40,0,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,3,-1);
+        javax.swing.SwingUtilities.invokeAndWait(() -> f.plugin.mouseWheelMoved(inside));
+        assertFalse(inside.isConsumed()); verifyNoInteractions(f.client,area);
+    }
+
+    @Test public void historyDoesNotAddAnInstructionRowOrReserveFooterSpace() throws Exception {
+        Fixture f=new Fixture();f.config.setFadeOutDuration(0);f.config.setShowInputPreview(false);f.config.setDynamicHeight(false);
+        BufferedImage history=f.render(f.overlay);f.config.setScrollHistory(false);BufferedImage normal=f.render(f.overlay);
+        assertArrayEquals(normal.getRGB(0,0,400,200,null,0,400),history.getRGB(0,0,400,200,null,0,400));
+    }
+
 }

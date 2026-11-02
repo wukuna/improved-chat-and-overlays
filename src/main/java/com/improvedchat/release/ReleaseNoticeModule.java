@@ -19,14 +19,14 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-01-chat-borders-input";
+    static final String RELEASE = "2026-11-02-chat-wheel-fix";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
+        "Restored camera zoom while scroll-history overlays are enabled and removed their instructional footer.",
         "Overlay timestamps can show Time ago: now, 30s, 20m or 2h. Choose Timestamp style under Style → Text; ages update automatically.",
         "Overlay borders leave space on all four sides, with full-height lines to keep text and icons clear of the frame.",
         "Simple Overlays, Create and Tools tabs; click an overlay name for a resizable editor window with Messages, Style and Alerts tabs.",
         "Overlays can scroll through session history: enable Scroll history, use the wheel, and right-click Latest to return.",
-        "Long input previews scroll behind your name so the newest text and typing marker stay visible.",
     };
 
     @Inject private Client client;

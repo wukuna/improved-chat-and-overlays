@@ -251,6 +251,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     @Inject
     private net.runelite.client.eventbus.EventBus eventBus;
     private final List<DynamicChatOverlay> overlays = new CopyOnWriteArrayList<>();
+    private volatile boolean overlayWheelReady;
     private final Map<String, OverlayMessageFilter> overlayMessageFilters = new ConcurrentHashMap<>();
 
     private NavigationButton navButton;
@@ -351,6 +352,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Override
     protected void shutDown() {
+        overlayWheelReady = false;
         mouseManager.unregisterMouseWheelListener(this);
         overlayManager.remove(nativeChatBorderOverlay);
         nativeChatActive = false;
@@ -626,6 +628,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Subscribe
     public void onBeforeRender(net.runelite.api.events.BeforeRender event) {
+        // Publish input eligibility on the client thread; AWT wheel dispatch only reads snapshots.
+        overlayWheelReady = client.getGameState() == GameState.LOGGED_IN && !client.isMenuOpen() && !client.isWidgetSelected();
+        for (DynamicChatOverlay overlay : overlays) overlay.updateScrollInputState();
         if (!ruleWarningShown && BoundedPattern.warning() != null) {
             ruleWarningShown = true;
             refreshPanel();
@@ -642,6 +647,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
+        if (event.getGameState() != GameState.LOGGED_IN) overlayWheelReady = false;
         if (event.getGameState() == GameState.LOGGED_IN) {
             updatePmWidgetVisibility();
         }
@@ -1119,7 +1125,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     @Override
     public java.awt.event.MouseWheelEvent mouseWheelMoved(java.awt.event.MouseWheelEvent event) {
         if (event.isConsumed() || event.isAltDown() || event.isControlDown() || event.isShiftDown()
-                || client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen() || client.isWidgetSelected()) return event;
+                || !overlayWheelReady) return event;
         DynamicChatOverlay target = null;
         for (DynamicChatOverlay overlay : overlays) {
             if (overlay.canScrollAt(event.getPoint())
