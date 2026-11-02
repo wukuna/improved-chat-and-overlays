@@ -38,16 +38,20 @@ public class ReleaseNoticeModuleTest
         doAnswer(i -> { pending.add(i.getArgument(0)); return null; }).when(thread).invokeLater(any(Runnable.class));
     }
 
-    @Test public void printsFiveRecentChangesOnceAcrossLoginAndReenable()
+    @Test public void printsOneCompactBulletNoticeOnceAcrossLoginAndReenable()
     {
         notice.startUp(); flush();
         ArgumentCaptor<QueuedMessage> messages=ArgumentCaptor.forClass(QueuedMessage.class);
-        verify(chat,times(6)).queue(messages.capture());
-        assertTrue(messages.getAllValues().get(1).getRuneLiteFormattedMessage().contains("Restored camera zoom"));
+        verify(chat,times(1)).queue(messages.capture());
+        String message=messages.getValue().getRuneLiteFormattedMessage();
+        assertTrue(message.contains("Updates:<br>* "));
+        assertEquals(3,message.split("<br>\\* ",-1).length-1);
+        assertFalse(message.contains("Recent updates"));
+        assertFalse(message.contains("1. "));
         assertEquals(ReleaseNoticeModule.RELEASE,seen);
         notice.onGameStateChanged(loggedIn()); flush();
         notice.shutDown(); notice.startUp(); flush();
-        verify(chat,times(6)).queue(any(QueuedMessage.class));
+        verify(chat,times(1)).queue(any(QueuedMessage.class));
     }
 
     @Test public void waitsForLoginAndDoesNotMarkUnshownNotesAsRead()
@@ -56,23 +60,23 @@ public class ReleaseNoticeModuleTest
         notice.startUp(); flush(); verifyNoInteractions(chat); assertNull(seen);
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
         notice.onGameStateChanged(loggedIn()); flush();
-        verify(chat,times(6)).queue(any(QueuedMessage.class));
+        verify(chat,times(1)).queue(any(QueuedMessage.class));
     }
 
     @Test public void currentReceiptSuppressesNoticeButOlderReleaseDoesNot()
     {
         seen=ReleaseNoticeModule.RELEASE; notice.startUp(); flush(); verifyNoInteractions(chat);
         seen="previous-release"; notice.onProfileChanged(new ProfileChanged()); flush();
-        verify(chat,times(6)).queue(any(QueuedMessage.class));
+        verify(chat,times(1)).queue(any(QueuedMessage.class));
     }
 
     @Test public void shutdownAndProfileChangeInvalidateOldCallbacks()
     {
         notice.startUp(); notice.shutDown(); flush(); verifyNoInteractions(chat); assertNull(seen);
         notice.startUp(); notice.onProfileChanged(new ProfileChanged()); flush();
-        verify(chat,times(6)).queue(any(QueuedMessage.class));
+        verify(chat,times(1)).queue(any(QueuedMessage.class));
         seen=null; notice.onProfileChanged(new ProfileChanged()); flush();
-        verify(chat,times(12)).queue(any(QueuedMessage.class));
+        verify(chat,times(2)).queue(any(QueuedMessage.class));
     }
 
     private GameStateChanged loggedIn() { GameStateChanged event=new GameStateChanged(); event.setGameState(GameState.LOGGED_IN); return event; }

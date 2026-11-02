@@ -21,12 +21,10 @@ public final class ReleaseNoticeModule
 {
     static final String RELEASE = "2026-11-02-chat-wheel-fix";
     static final String SEEN_KEY = "releaseNoticeId";
-    private static final String[] RECENT = {
-        "Restored camera zoom while scroll-history overlays are enabled and removed their instructional footer. Rounded chatbox borders now round the background too.",
-        "Overlay timestamps can show Time ago: now, 30s, 20m or 2h. Choose Timestamp style under Style → Text; ages update automatically.",
-        "Overlay borders leave space on all four sides, with full-height lines to keep text and icons clear of the frame.",
-        "Simple Overlays, Create and Tools tabs; click an overlay name for a resizable editor window with Messages, Style and Alerts tabs.",
-        "Overlays can scroll through session history: enable Scroll history, use the wheel, and right-click Latest to return.",
+    private static final String[] UPDATES = {
+        "Fixed camera zoom with the chatbox open and overlay history enabled.",
+        "Rounded chatbox backgrounds now follow their borders.",
+        "Removed the overlay history instruction footer.",
     };
 
     @Inject private Client client;
@@ -53,8 +51,7 @@ public final class ReleaseNoticeModule
         if (client.getGameState() != GameState.LOGGED_IN
             || RELEASE.equals(configManager.getConfiguration("improvedchat", SEEN_KEY)))
             return;
-        send("Recent updates (newest first):");
-        for (int i = 0; i < Math.min(5, RECENT.length); i++) send((i + 1) + ". " + RECENT[i]);
+        send("Updates:<br>* " + String.join("<br>* ", UPDATES));
         configManager.setConfiguration("improvedchat", SEEN_KEY, RELEASE);
     }
 
@@ -62,7 +59,7 @@ public final class ReleaseNoticeModule
     {
         String message = new ChatMessageBuilder().append(ChatColorType.NORMAL).append("[")
             .append(ChatColorType.HIGHLIGHT).append("Improved Chat and Overlays")
-            .append(ChatColorType.NORMAL).append("] ").append(text).build();
+            .append(ChatColorType.NORMAL).append("] ").build() + text;
         chat.queue(QueuedMessage.builder().type(ChatMessageType.CONSOLE)
             .runeLiteFormattedMessage(message).build());
     }
