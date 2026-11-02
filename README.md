@@ -24,7 +24,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 **Availability:** Install **Improved Chat and Overlays** from RuneLite's Plugin Hub. Experimental overlay effects and message replacement are marked **Beta** in their settings.
 
-**Regular chatbox border:** open the plugin settings → **Chatbox** → **Chatbox border**. It starts off. Choose a solid color and opacity, thickness, optional RGB with cycle speed, and rounded corners. The frame follows the visible native chat area in fixed and resizable layouts, including chat resizing; it disappears when chat is collapsed, hidden or replaced by a dialogue. Rounded corners decorate the outline without clipping the native background. Custom overlay borders remain independent.
+**Regular chatbox border:** open the plugin settings → **Chatbox** → **Chatbox border**. It starts off. Choose a solid color and opacity, thickness, optional RGB with cycle speed, and rounded corners. The frame follows the visible native chat area in fixed and resizable layouts, including chat resizing; it disappears when chat is collapsed, hidden or replaced by a dialogue. Rounded corners clip the native background to the same curve as the solid or RGB frame, preserving its color, texture and opacity. Custom overlay borders remain independent.
 
 **More plugins:** [Banking, Looting, Right-Clicks, Interface Layout and Chat](https://github.com/wukuna#runelite-plugins).
 

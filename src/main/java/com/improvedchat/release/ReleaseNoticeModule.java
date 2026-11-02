@@ -22,7 +22,7 @@ public final class ReleaseNoticeModule
     static final String RELEASE = "2026-11-02-chat-wheel-fix";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
-        "Restored camera zoom while scroll-history overlays are enabled and removed their instructional footer.",
+        "Restored camera zoom while scroll-history overlays are enabled and removed their instructional footer. Rounded chatbox borders now round the background too.",
         "Overlay timestamps can show Time ago: now, 30s, 20m or 2h. Choose Timestamp style under Style → Text; ages update automatically.",
         "Overlay borders leave space on all four sides, with full-height lines to keep text and icons clear of the frame.",
         "Simple Overlays, Create and Tools tabs; click an overlay name for a resizable editor window with Messages, Style and Alerts tabs.",

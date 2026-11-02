@@ -230,6 +230,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Inject
     private com.improvedchat.overlay.NativeChatBorderOverlay nativeChatBorderOverlay;
+    @Inject
+    private com.improvedchat.overlay.NativeChatBackgroundOverlay nativeChatBackgroundOverlay;
 
     @Inject private net.runelite.client.input.MouseManager mouseManager;
 
@@ -318,6 +320,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         rebuildChatFilter();
         clanChatPresentationService.startUp();
         overlayManager.add(nativeChatBorderOverlay);
+        overlayManager.add(nativeChatBackgroundOverlay);
+        nativeChatBackgroundOverlay.startUp();
 
         for (OverlayConfig oc : overlayConfigs) {
             addOverlay(oc);
@@ -355,6 +359,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         overlayWheelReady = false;
         mouseManager.unregisterMouseWheelListener(this);
         overlayManager.remove(nativeChatBorderOverlay);
+        overlayManager.remove(nativeChatBackgroundOverlay);
+        nativeChatBackgroundOverlay.shutDown();
         nativeChatActive = false;
         nativeChatGeneration++;
         releaseNoticeModule.shutDown();

@@ -430,7 +430,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "chatboxBorderRgbSeconds", name = "Border RGB cycle", description = "Seconds for one complete rainbow cycle", section = chatboxSection, position = 32)
     default int chatboxBorderRgbSeconds() { return 8; }
 
-    @ConfigItem(keyName = "chatboxBorderRounded", name = "Rounded border", description = "Round the decorative border corners; the native chat background and click areas stay unchanged", section = chatboxSection, position = 33)
+    @ConfigItem(keyName = "chatboxBorderRounded", name = "Rounded border", description = "Round the border and native chat background together", section = chatboxSection, position = 33)
     default boolean chatboxBorderRounded() { return false; }
 
     @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = cleanupSection, position = 22)
