@@ -207,11 +207,19 @@ public final class ChatRenderUtils {
 
     public static String formatTimeAgo(long timestamp, long currentTime) {
         long seconds = currentTime <= timestamp ? 0 : (currentTime - timestamp) / 1000;
-        if (seconds <= 0) return "now";
-        if (seconds < 60) return seconds + "s";
-        if (seconds < 3600) return seconds / 60 + "m";
-        if (seconds < 86400) return seconds / 3600 + "h";
-        return seconds / 86400 + "d";
+        if (seconds >= 360000) return null;
+        long value = seconds < 60 ? seconds : seconds < 3600 ? seconds / 60 : seconds / 3600;
+        String unit = seconds < 60 ? "s" : seconds < 3600 ? "m" : "h";
+        return (value < 10 ? "0" : "") + value + unit;
+    }
+
+    private static int timeAgoColumnWidth(FontMetrics metrics) {
+        int digitWidth = 0;
+        for (char digit = '0'; digit <= '9'; digit++) {
+            digitWidth = Math.max(digitWidth, metrics.charWidth(digit));
+        }
+        int unitWidth = Math.max(metrics.charWidth('s'), Math.max(metrics.charWidth('m'), metrics.charWidth('h')));
+        return 2 * digitWidth + unitWidth + metrics.charWidth(' ');
     }
 
     /**
@@ -294,6 +302,14 @@ public final class ChatRenderUtils {
                 Color tsColor = retainContextualColours ? Color.WHITE : textColor;
                 headerSegments.add(new TextSegment(ts, -1, width, tsColor));
                 headerWidth += width;
+            }
+            if (relative) {
+                // Reserve pixels, not spaces: proportional fonts and RGB styles must keep
+                // the sender, message wrapping and alignment steady as the age changes.
+                int columnWidth = timeAgoColumnWidth(metrics);
+                headerSegments.add(new TextSegment("", TextSegment.SPACER,
+                        Math.max(0, columnWidth - headerWidth), null));
+                headerWidth = Math.max(headerWidth, columnWidth);
             }
         }
 
@@ -714,7 +730,7 @@ public final class ChatRenderUtils {
         List<TextSegment> out = new ArrayList<>();
         int colorIndex = colorIndexRef[0];
         for (TextSegment seg : input) {
-            if (seg.iconId >= 0 || seg.iconId == TextSegment.LINE_BREAK) {
+            if (seg.iconId >= 0 || seg.iconId == TextSegment.LINE_BREAK || seg.iconId == TextSegment.SPACER) {
                 out.add(seg);
                 continue;
             }
@@ -761,7 +777,7 @@ public final class ChatRenderUtils {
                     currentLine = new ArrayList<>();
                 }
                 currentWidth = subsequentLineWidth;
-            } else if (segment.iconId >= 0) {
+            } else if (segment.iconId >= 0 || segment.iconId == TextSegment.SPACER) {
                 if (segment.width <= currentWidth) {
                     currentLine.add(segment);
                     currentWidth -= segment.width;

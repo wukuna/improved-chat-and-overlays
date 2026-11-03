@@ -456,7 +456,8 @@ public class DynamicChatOverlay extends Overlay {
     private int calculateLineWidth(List<TextSegment> segments, FontMetrics metrics) {
         int width = 0;
         for (TextSegment segment : segments) {
-            width += segment.iconId >= 0 ? segment.width : metrics.stringWidth(segment.text);
+            width += segment.iconId >= 0 || segment.iconId == TextSegment.SPACER
+                    ? segment.width : metrics.stringWidth(segment.text);
         }
         return width;
     }
@@ -527,7 +528,9 @@ public class DynamicChatOverlay extends Overlay {
             FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
 
         for (TextSegment segment : segments) {
-            if (segment.iconId >= 0) {
+            if (segment.iconId == TextSegment.SPACER) {
+                x += segment.width;
+            } else if (segment.iconId >= 0) {
                 BufferedImage img = ChatRenderUtils.getModIconImage(segment.iconId, modIcons);
                 if (img != null) {
                     x += ChatRenderUtils.drawIcon(graphics, img, fontSize, metrics, x, y);

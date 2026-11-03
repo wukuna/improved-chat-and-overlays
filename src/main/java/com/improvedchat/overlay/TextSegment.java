@@ -4,6 +4,7 @@ import java.awt.Color;
 
 public final class TextSegment {
     public static final int LINE_BREAK = -2;
+    public static final int SPACER = -3;
 
     public com.improvedchat.model.AnimatedTextStyle textStyle;
     public final String text;

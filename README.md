@@ -76,7 +76,7 @@ Each overlay can independently control:
 - horizontal/vertical padding inside the border, with at least 3 pixels of clearance for borders and rounded corners; full-height text rows keep letters, icons and shadows clear of the frame;
 - background color and transparency;
 - border color and thickness;
-- timestamps: enable **Style → Text → Timestamps**, then choose **Timestamp style → Time ago (20m)** for compact ages such as `now`, `30s`, `20m`, `2h` or `1d`. Ages update automatically, including while browsing session history. **Clock time** keeps the existing configured time format. Each overlay saves its own choice;
+- timestamps: enable **Style → Text → Timestamps**, then choose **Timestamp style → Time ago (20m)** for ages such as `01s`, `30s`, `20m`, `02h` or `99h`. A fixed pixel column keeps messages aligned as ages update, including with proportional fonts, animated colors and session history. At 100 hours the timestamp disappears while its space remains reserved. **Clock time** keeps the existing configured time format. Each overlay saves its own choice;
 - dynamic height and always-visible behavior;
 - duplicate-count display;
 - input preview and "only while typing" behavior; long input scrolls behind your fixed username to keep the newest text and typing marker visible, adapting as you delete text or resize the overlay;

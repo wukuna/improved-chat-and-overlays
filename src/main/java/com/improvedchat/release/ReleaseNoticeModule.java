@@ -27,6 +27,7 @@ public final class ReleaseNoticeModule
         "Removed the overlay history instruction footer.",
         "Added overlay toggle hotkeys, including shared keys for multiple overlays.",
         "Added a separate hotkey to hide the entire chatbox and its buttons.",
+        "Elapsed timestamps now stay aligned through 99h and disappear at 100h.",
     };
 
     @Inject private Client client;

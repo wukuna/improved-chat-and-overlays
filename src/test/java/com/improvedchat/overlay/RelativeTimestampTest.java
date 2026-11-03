@@ -14,8 +14,8 @@ import static org.junit.Assert.*;
 public class RelativeTimestampTest {
     @Test public void compactAgesFloorAtUnitBoundariesAndClampFutureMessages() {
         long sent=1_700_000_000_000L;
-        long[] ages={-1000,0,999,1000,30000,59999,60000,119999,1200000,3599999,3600000,86399999,86400000,172800000};
-        String[] expected={"now","now","now","1s","30s","59s","1m","1m","20m","59m","1h","23h","1d","2d"};
+        long[] ages={-1000,0,999,1000,30000,59999,60000,119999,1200000,3599999,3600000,86399999,86400000,172800000,359999999,360000000,360001000};
+        String[] expected={"00s","00s","00s","01s","30s","59s","01m","01m","20m","59m","01h","23h","24h","48h","99h",null,null};
         for(int i=0;i<ages.length;i++)assertEquals("Age "+ages[i],expected[i],ChatRenderUtils.formatTimeAgo(sent,sent+ages[i]));
     }
 
