@@ -28,6 +28,7 @@ public final class ReleaseNoticeModule
         "Added overlay toggle hotkeys, including shared keys for multiple overlays.",
         "Added a separate hotkey to hide the entire chatbox and its buttons.",
         "Elapsed timestamps now stay aligned through 99h and disappear at 100h.",
+        "Chat overlays now stay behind game windows, including the bank and bank PIN screen.",
     };
 
     @Inject private Client client;

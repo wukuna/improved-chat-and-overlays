@@ -688,7 +688,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     @Subscribe
     public void onBeforeRender(net.runelite.api.events.BeforeRender event) {
         // Publish input eligibility on the client thread; AWT wheel dispatch only reads snapshots.
-        overlayWheelReady = client.getGameState() == GameState.LOGGED_IN && !client.isMenuOpen() && !client.isWidgetSelected();
+        overlayWheelReady = client.getGameState() == GameState.LOGGED_IN && !client.isMenuOpen() && !client.isWidgetSelected()
+                && !com.improvedchat.chatbox.resize.TopLevelModals.hasOpenModal(client);
         for (DynamicChatOverlay overlay : overlays) overlay.updateScrollInputState();
         if (!ruleWarningShown && BoundedPattern.warning() != null) {
             ruleWarningShown = true;

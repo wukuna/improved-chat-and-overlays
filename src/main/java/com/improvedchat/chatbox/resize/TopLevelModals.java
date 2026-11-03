@@ -89,9 +89,15 @@ public class TopLevelModals {
     }
 
     boolean isTopLevelModalOpen() {
+        return hasOpenModal(client);
+    }
+
+    /** Read on the client thread; also used when resizing is disabled. */
+    public static boolean hasOpenModal(Client client) {
         GameState state = client.getGameState();
         if (state != GameState.LOGGED_IN && state != GameState.LOADING) return false;
         HashTable<WidgetNode> componentTable = client.getComponentTable();
+        if (componentTable == null) return false;
         for (int slot : MODAL_SLOTS) if (componentTable.get(slot) != null) return true;
         return false;
     }

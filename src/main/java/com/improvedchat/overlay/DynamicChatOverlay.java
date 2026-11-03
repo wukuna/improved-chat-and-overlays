@@ -74,7 +74,9 @@ public class DynamicChatOverlay extends Overlay {
         this.overlayConfig = overlayConfig;
 
         setPosition(client.isResized() ? OverlayPosition.ABOVE_CHATBOX_RIGHT : OverlayPosition.BOTTOM_LEFT);
-        setLayer(OverlayLayer.UNDER_WIDGETS);
+        // RuneLite promotes freely positioned UNDER_WIDGETS overlays above interfaces.
+        // ABOVE_SCENE remains behind them even after dragging or loading a saved position.
+        setLayer(OverlayLayer.ABOVE_SCENE);
         setMinimumSize(150);
         applyPlacementPolicy(true);
         rebuildMenuEntries();

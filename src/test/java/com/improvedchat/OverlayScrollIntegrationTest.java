@@ -142,4 +142,35 @@ public class OverlayScrollIntegrationTest {
         assertArrayEquals(normal.getRGB(0,0,400,200,null,0,400),history.getRGB(0,0,400,200,null,0,400));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test public void bankPinAndOtherModalWindowsKeepWheelInputWithoutClearingHistory() throws Exception {
+        Fixture f = new Fixture();
+        HashTable<WidgetNode> components = mock(HashTable.class);
+        when(f.client.getComponentTable()).thenReturn(components);
+        int[] slots = {
+            net.runelite.api.gameval.InterfaceID.Toplevel.MAINMODAL, net.runelite.api.gameval.InterfaceID.Toplevel.FLOATER,
+            net.runelite.api.gameval.InterfaceID.ToplevelPreEoc.MAINMODAL, net.runelite.api.gameval.InterfaceID.ToplevelPreEoc.FLOATER,
+            net.runelite.api.gameval.InterfaceID.ToplevelOsrsStretch.MAINMODAL, net.runelite.api.gameval.InterfaceID.ToplevelOsrsStretch.FLOATER
+        };
+        for (int slot : slots) for (int group : new int[]{net.runelite.api.gameval.InterfaceID.BANKMAIN,
+                net.runelite.api.gameval.InterfaceID.BANKPIN_KEYPAD, net.runelite.api.gameval.InterfaceID.SHOPMAIN}) {
+            f.overlay.showLatest();
+            BufferedImage before = f.render(f.overlay);
+            WidgetNode window = mock(WidgetNode.class);
+            when(window.getId()).thenReturn(group);
+            when(components.get((long) slot)).thenReturn(window);
+            assertFalse(f.wheel(60,40,-1,0).isConsumed());
+            sameRows(before, f.render(f.overlay), 20, 150); // Still draws behind the window; no history loss.
+            clearInvocations(f.client, components);
+            MouseWheelEvent wheel = new MouseWheelEvent(new Canvas(), MouseWheelEvent.MOUSE_WHEEL,
+                    0, 0, 60, 40, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 3, -1);
+            javax.swing.SwingUtilities.invokeAndWait(() -> f.plugin.mouseWheelMoved(wheel));
+            assertFalse(wheel.isConsumed());
+            verifyNoInteractions(f.client, components);
+            when(components.get((long) slot)).thenReturn(null);
+            assertTrue(f.wheel(60,40,-1,0).isConsumed());
+            assertEquals(20, f.plugin.getHistoryForOverlay(f.config).size());
+        }
+    }
+
 }
