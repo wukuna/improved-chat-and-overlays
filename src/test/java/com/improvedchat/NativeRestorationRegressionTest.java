@@ -94,7 +94,7 @@ public class NativeRestorationRegressionTest {
             schedule.setAccessible(true); schedule.invoke(plugin);
             if (atTickEnd) queue.remove().run();
             set(plugin,"nativeChatActive",reenabled); set(plugin,"nativeChatGeneration",2L);
-            // No compatibility/config/module collaborators: executing stale reconciliation would fail.
+
             while (!queue.isEmpty()) queue.remove().run();
         }
     }

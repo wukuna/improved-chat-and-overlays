@@ -23,7 +23,7 @@ public class NativeChatBackgroundOverlayTest {
         assertFalse(f.hidden.get()); assertEquals(0, result.getRGB(20, 30));
         assertEquals(128, result.getRGB(60, 60) >>> 24);
         Color color = new Color(result.getRGB(60,60), true);
-        // Java2D premultiplied-alpha rounding may differ by one channel value.
+
         assertEquals(0x33, color.getRed(), 1); assertEquals(0x66, color.getGreen(), 1); assertEquals(0x99, color.getBlue(), 1);
         verify(f.child, never()).setOpacity(anyInt()); verify(f.child, never()).setWidth(anyInt());
         verify(f.child, never()).setHeight(anyInt()); verify(f.area, never()).setHidden(anyBoolean());

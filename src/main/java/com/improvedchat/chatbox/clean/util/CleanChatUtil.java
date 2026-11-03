@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,7 +40,7 @@ public class CleanChatUtil
 	public static final String CLAN_INSTRUCTION_MESSAGE = "To talk in your clan's channel, start each line of chat with // or /c.";
 	public static final int GUEST_CLAN = -1;
 	public static final int SCRIPT_REBUILD_CHATBOX = 84;
-	// Scripts 32-36 are all about scrolling in different ways
+
 	public static final int SCRIPT_SCROLLBAR_MIN = 32;
 	public static final int SCRIPT_SCROLLBAR_MAX = 36;
 	public static final int MAX_CHANNEL_LIST_SIZE = 128;
@@ -52,17 +52,16 @@ public class CleanChatUtil
 		return Text.removeTags(string).replace('\u00A0', ' ');
 	}
 
-	// Sizes sourced from: https://github.com/JamesShelton140/aqp-finder
 	private static final Map<Character, Integer> CHAR_SIZE_MAP = Map.<Character, Integer>ofEntries(
-		// Upper case
+
 		Map.entry('A', 6), Map.entry('B', 5), Map.entry('C', 5), Map.entry('D', 5), Map.entry('E', 4), Map.entry('F', 4), Map.entry('G', 6), Map.entry('H', 5), Map.entry('I', 1), Map.entry('J', 5), Map.entry('K', 5), Map.entry('L', 4), Map.entry('M', 7), Map.entry('N', 6), Map.entry('O', 6), Map.entry('P', 5), Map.entry('Q', 6), Map.entry('R', 5), Map.entry('S', 5), Map.entry('T', 3), Map.entry('U', 6), Map.entry('V', 5), Map.entry('W', 7), Map.entry('X', 5), Map.entry('Y', 5), Map.entry('Z', 5),
-		// Lower case
+
 		Map.entry('a', 5), Map.entry('b', 5), Map.entry('c', 4), Map.entry('d', 5), Map.entry('e', 5), Map.entry('f', 4), Map.entry('g', 5), Map.entry('h', 5), Map.entry('i', 1), Map.entry('j', 4), Map.entry('k', 4), Map.entry('l', 1), Map.entry('m', 7), Map.entry('n', 5), Map.entry('o', 5), Map.entry('p', 5), Map.entry('q', 5), Map.entry('r', 3), Map.entry('s', 5), Map.entry('t', 3), Map.entry('u', 5), Map.entry('v', 5), Map.entry('w', 5), Map.entry('x', 5), Map.entry('y', 5), Map.entry('z', 5),
-		// Numbers
+
 		Map.entry('0', 6), Map.entry('1', 4), Map.entry('2', 6), Map.entry('3', 5), Map.entry('4', 5), Map.entry('5', 5), Map.entry('6', 6), Map.entry('7', 5), Map.entry('8', 6), Map.entry('9', 6),
-		// Symbols
+
 		Map.entry(' ', 1), Map.entry(':', 1), Map.entry(';', 2), Map.entry('"', 3), Map.entry('@', 11), Map.entry('!', 1), Map.entry('.', 1), Map.entry('\'', 2), Map.entry(',', 2), Map.entry('(', 2), Map.entry(')', 2), Map.entry('+', 5), Map.entry('-', 4), Map.entry('=', 6), Map.entry('?', 6), Map.entry('*', 7), Map.entry('/', 4), Map.entry('\\', 4), Map.entry('$', 6), Map.entry('£', 8), Map.entry('^', 6), Map.entry('{', 3), Map.entry('}', 3), Map.entry('[', 3), Map.entry(']', 3), Map.entry('&', 9), Map.entry('#', 11), Map.entry('°', 4), Map.entry('<', 5), Map.entry('>', 5), Map.entry('%', 9), Map.entry('_', 7), Map.entry('|', 1),
-		// NBSP
+
 		Map.entry('\u00A0', 1));
 
 	public static int getTextLength(String text, Client client)
@@ -82,13 +81,12 @@ public class CleanChatUtil
 	private static int getChatIconsWidth(String text)
 	{
 		int imgCount = Math.toIntExact(IMG_TAG_REGEXP.matcher(text).results().count());
-		return imgCount * 13; // 11 + 2
+		return imgCount * 13;
 	}
 
-	// Mimics 'paraheight' cs2 instruction
 	public static int getTextLineCount(String text, int width, int indentSpaces, Client client)
 	{
-		// Positive lookahead ?= makes it so that the delimiter is included in the split strings
+
 		Iterator<String> iterator = List.of(text.split("(?=<br>|[ \u00A0\n]|<n>)")).iterator();
 
 		int numLines = 0;
@@ -102,37 +100,35 @@ public class CleanChatUtil
 
 			if (currentWidth < width)
 			{
-				// Start of the line
+
 				if (currentLine.toString().isEmpty())
 				{
 					currentLine.append(next);
 				}
-				// Adding a line break
+
 				else if (next.startsWith("<br>") || next.startsWith("<n>") || next.charAt(0) == '\n')
 				{
 					numLines++;
 					currentLine = new StringBuilder(next);
 				}
-				// Adding the next chunk
+
 				else if (currentWidth + getTextLength(next, client) <= width)
 				{
 					currentLine.append(next);
 				}
-				// Adding the next chunk after the initial indent
-				// `currentWidth + getTextLength(next) > width` is implied
-				// add 1 to indentSpaces so that we include the next chunk after the indent on the first line
+
 				else if (numLines == 0 && currentLine.length() <= indentSpaces + 1)
 				{
 					currentLine.append(next);
 				}
-				// Width too big, go to next line
+
 				else
 				{
 					numLines++;
 					currentLine = new StringBuilder(next);
 				}
 			}
-			// Width immediately too big, go to next line (this is probably a chunk that will get cut off)
+
 			else
 			{
 				numLines++;

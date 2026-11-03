@@ -27,7 +27,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.overlay.*;
 
-/** Repaints only the native background layer, before the native messages and input. */
 @Singleton
 public class NativeChatBackgroundOverlay extends Overlay {
     private final Client client;
@@ -59,7 +58,6 @@ public class NativeChatBackgroundOverlay extends Overlay {
         clientThread.invoke(() -> { if (!running) { restore(); cachedImage = null; cachedParts = null; } });
     }
 
-    // Run after the resize/opacity modules have settled the native background for this frame.
     @Subscribe(priority = -100)
     public void onBeforeRender(BeforeRender event) {
         restore();
@@ -88,14 +86,14 @@ public class NativeChatBackgroundOverlay extends Overlay {
             if (!childBounds.intersects(clip)) continue;
             BufferedImage sprite = null;
             if (child.getType() == WidgetType.GRAPHIC) {
-                // Preserve overrides supplied by RuneLite or another plugin.
+
                 SpritePixels override = client.getWidgetSpriteOverrides().get(child.getId());
                 if (override == null) override = client.getSpriteOverrides().get(child.getSpriteId());
                 sprite = override == null ? sprites.getSprite(child.getSpriteId(), 0) : override.toBufferedImage();
                 if (sprite == null || child.getBorderType() != 0
                         || child.getSpriteTiling() && (child.isFlippedHorizontally() || child.isFlippedVertically())) return;
             } else if (child.getType() != WidgetType.RECTANGLE || !child.isFilled()) {
-                return; // Leave unfamiliar native/dialogue artwork entirely under game ownership.
+                return;
             }
             parts.add(new Part(childBounds, child.getTextColor(), child.getOpacity(), sprite,
                     child.getSpriteTiling(), child.isFlippedHorizontally(), child.isFlippedVertically()));
@@ -109,7 +107,7 @@ public class NativeChatBackgroundOverlay extends Overlay {
             cachedParts = parts; cachedClip = clip; cachedInset = inset;
         }
         paintBounds = bounds;
-        // Suppression lasts only until this layer has drawn. No widget dimensions, hitboxes or opacity change.
+
         hiddenForFrame.addAll(visible);
         for (Widget child : visible) child.setHidden(true);
         prepared = true;
@@ -124,7 +122,6 @@ public class NativeChatBackgroundOverlay extends Overlay {
         return null;
     }
 
-    // If the layer was skipped, restore before any game script can set a new native hidden state.
     @Subscribe public void onScriptPreFired(ScriptPreFired event) { restore(); }
     @Subscribe public void onGameStateChanged(GameStateChanged event) { restore(); }
 

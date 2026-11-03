@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -50,13 +50,6 @@ import java.awt.Stroke;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * Improved Chat resize affordance.
- *
- * The hit targets intentionally remain forgiving along the top/right edges, but the visible UI is
- * a pair of centered grip capsules with a subtle dashed guide rather than Chat Resizer's filled
- * border bands. This keeps the inherited resize mechanics familiar without cloning its chrome.
- */
 @Singleton
 public final class DragResizePreview extends Overlay {
     private static final int TOP_GRIP_W = 54;

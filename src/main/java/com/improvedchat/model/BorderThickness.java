@@ -1,6 +1,5 @@
 package com.improvedchat.model;
 
-/** Border thickness for an Improved Chat overlay. */
 public enum BorderThickness {
     THIN("Thin", 1),
     NORMAL("Normal", 2),

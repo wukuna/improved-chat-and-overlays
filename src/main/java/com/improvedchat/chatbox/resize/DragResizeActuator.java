@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -46,7 +46,6 @@ import java.awt.event.MouseEvent;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-// Let the player resize chat by holding the configured drag key and dragging top or right border of chat box
 @Singleton
 public final class DragResizeActuator extends MouseAdapter {
     static final int BORDER_GRAB = 6;
@@ -56,21 +55,21 @@ public final class DragResizeActuator extends MouseAdapter {
     private final ConfigManager configManager;
     private final SecondarySize swapSize;
 
-    @Getter private final KeyListener keyListener; // Tracks the configured drag key's held state via AWT key events
+    @Getter private final KeyListener keyListener;
 
-    @Getter private volatile Point pointer; // Last known cursor position in canvas space, published from mouse callbacks
-    private volatile Rectangle bounds; // Chat rectangle for mouse hit-testing, published from update on the client thread
-    private volatile int maxWidthChange, maxHeightChange; // Size ceilings for the live window, published alongside bounds
-    private volatile int canvasH; // Window height, published alongside bounds; keeps the top band reachable (see bandY)
-    private volatile boolean modifierHeld; // Written from the hotkey callbacks (AWT thread), read by the overlay (client thread)
+    @Getter private volatile Point pointer;
+    private volatile Rectangle bounds;
+    private volatile int maxWidthChange, maxHeightChange;
+    private volatile int canvasH;
+    private volatile boolean modifierHeld;
 
-    @Getter @Setter private Dimension lastDragSize; // Chat size from the previous drag frame; null while not dragging
-    @Getter private volatile boolean dragging; // True while a border drag is in progress
-    @Getter private volatile boolean fixedMode; // Fixed layout: only the top border (height) is draggable
+    @Getter @Setter private Dimension lastDragSize;
+    @Getter private volatile boolean dragging;
+    @Getter private volatile boolean fixedMode;
 
-    private volatile boolean dragTop, dragRight; // Read by the overlay (client thread) to keep the dragged band lit
-    private boolean dragFixed; // Dragging in fixed layout
-    private boolean dragSwap; // Dragging the secondary size's values
+    private volatile boolean dragTop, dragRight;
+    private boolean dragFixed;
+    private boolean dragSwap;
     private int startX, startY, startExtraW, startExtraH;
 
     @Inject
@@ -85,7 +84,6 @@ public final class DragResizeActuator extends MouseAdapter {
         };
     }
 
-    // Publishes the chat rectangle, layout and size ceilings for the AWT-thread mouse callbacks and the overlay to read
     public void update(Rectangle bounds, boolean fixedMode, int canvasW, int canvasH) {
         this.bounds = bounds;
         this.fixedMode = fixedMode;
@@ -94,7 +92,6 @@ public final class DragResizeActuator extends MouseAdapter {
         this.canvasH = canvasH;
     }
 
-    // Clears all state, including any in-progress drag
     public void reset() {
         bounds = null;
         pointer = null;
@@ -104,23 +101,23 @@ public final class DragResizeActuator extends MouseAdapter {
 
     @Override
     public MouseEvent mousePressed(MouseEvent e) {
-        if (dragging || !modifierActive()) return e; // Mouse event can't carry an arbitrary key, so use tracked state
+        if (dragging || !modifierActive()) return e;
 
         Rectangle b = bounds;
         if (b == null) return e;
 
         boolean top = nearTop(b, e);
-        boolean right = !fixedMode && nearRight(b, e); // Fixed layout resizes height only, so ignore the right border
+        boolean right = !fixedMode && nearRight(b, e);
         if (!top && !right) return e;
 
         dragging = true;
         dragTop = top;
         dragRight = right;
         dragFixed = fixedMode;
-        dragSwap = swapSize.isActive(); // Captured, so one drag edits one set even if the hotkey flips mid-drag
+        dragSwap = swapSize.isActive();
         startX = e.getX();
         startY = e.getY();
-        // Take live config as baseline so ungrabbed/unchanged axis is treated as no-op
+
         startExtraW = swapSize.effectiveWidthChange();
         startExtraH = dragFixed ? swapSize.effectiveFixedHeightChange() : swapSize.effectiveHeightChange();
 
@@ -154,11 +151,10 @@ public final class DragResizeActuator extends MouseAdapter {
 
     @Override
     public MouseEvent mouseExited(MouseEvent e) {
-        pointer = null; // Cursor left the canvas; drop the hover so the bands dim and the readout hides
+        pointer = null;
         return e;
     }
 
-    // Writes offsets from the cursor's initial state as new values; edits the secondary set while it's active
     private void applyDrag(MouseEvent e) {
         if (dragRight) updateConfig(draggedWidthKey(), clamp(startExtraW + (e.getX() - startX), SizeClamps.MIN_WIDTH_CHANGE, maxWidthChange));
         if (dragTop) updateConfig(draggedHeightKey(), clamp(startExtraH + (startY - e.getY()), SizeClamps.MIN_HEIGHT_CHANGE, maxHeightChange));
@@ -173,7 +169,7 @@ public final class DragResizeActuator extends MouseAdapter {
     }
 
     private String draggedHeightKey() {
-        if (dragSwap) return ImprovedChatConfig.SWAP_HEIGHT_CHANGE; // Both layouts share the secondary height
+        if (dragSwap) return ImprovedChatConfig.SWAP_HEIGHT_CHANGE;
         return dragFixed ? ImprovedChatConfig.FIXED_HEIGHT_CHANGE : ImprovedChatConfig.HEIGHT_CHANGE;
     }
 
@@ -182,24 +178,20 @@ public final class DragResizeActuator extends MouseAdapter {
         if (current == null || current != value) configManager.setConfiguration(ImprovedChatConfig.GROUP, key, value);
     }
 
-    // Cursor within boundaries to alter height change on click-drag
     private boolean nearTop(Rectangle b, MouseEvent e) {
         int y = bandY(b, BORDER_GRAB, canvasH);
         return e.getY() >= y && e.getY() <= y + BORDER_GRAB && e.getX() >= b.x - BORDER_GRAB && e.getX() <= b.x + b.width - RIGHT_BAND_SHIFT;
     }
 
-    // Cursor within boundaries to alter width change on click-drag
     private static boolean nearRight(Rectangle b, MouseEvent e) {
         int outerX = b.x + b.width - RIGHT_BAND_SHIFT;
         return e.getX() >= outerX - BORDER_GRAB && e.getX() <= outerX && e.getY() >= b.y && e.getY() <= b.y + b.height + BORDER_GRAB;
     }
 
-    // Drag key enabled and held
     private boolean modifierActive() {
         return modifierHeld && !Keybind.NOT_SET.equals(config.dragModifier());
     }
 
-    // Whether the draggable border bands should be drawn this frame: a drag is in progress, or the drag key is active
     boolean isHighlightActive() {
         return dragging || modifierActive();
     }
@@ -220,19 +212,17 @@ public final class DragResizeActuator extends MouseAdapter {
         return new Rectangle(b.x - grab, bandY(b, grab, canvasH), b.width + grab + 1 - RIGHT_BAND_SHIFT, grab);
     }
 
-    // Hold a grab width inside canvas bottom so chat fully shrunk at canvas bottom can still be grabbed
     static int bandY(Rectangle b, int grab, int canvasH) {
         return Math.min(b.y, canvasH - grab);
     }
 
-    // Whether the size readout should show: a drag is in progress, or the drag key is held with the cursor over a band
     boolean isSizeReadoutActive() {
         if (dragging) return true;
         if (!modifierActive()) return false;
-        Rectangle b = bounds; // Both are published from other threads; read once so a clear can't null them mid-test
+        Rectangle b = bounds;
         Point p = pointer;
         if (b == null || p == null) return false;
         if (topBand(b, BORDER_GRAB, canvasH).contains(p)) return true;
-        return !fixedMode && rightBand(b, BORDER_GRAB).contains(p); // No right band in fixed layout
+        return !fixedMode && rightBand(b, BORDER_GRAB).contains(p);
     }
 }

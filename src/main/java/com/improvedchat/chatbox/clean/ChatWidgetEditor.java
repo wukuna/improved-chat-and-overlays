@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -64,13 +64,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.tuple.Pair;
 
-/**
- * <ul>
- *     <li>Removes channel name from chat widgets</li>
- *     <li>Indents multi-line messages</li>
- *     <li>Adjusts message height based on name removal and indentation</li>
- * </ul>
- */
 @Slf4j
 @Singleton
 public class ChatWidgetEditor
@@ -127,7 +120,7 @@ public class ChatWidgetEditor
 	{
 		if (event.getGameState() == GameState.HOPPING || event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			// Reset scroll
+
 			lastScrollDiff = -1;
 			chatboxScrolled = false;
 		}
@@ -148,57 +141,6 @@ public class ChatWidgetEditor
 		}
 	}
 
-	/*
-	Most chats appear in this format as dynamic children on the chatbox scroll area:
-		// bottom chat line
-		[0] = username
-		[1] = chat message
-		[2] = timestamp + channel name (timestamp only if that plugin is on, but is pretty common so should definitely account for it)
-		[3] = rank icon
-		// Next chat line
-		[4] = next username
-		etc...
-
-	However, some are special:
-
-	Friends chats:
-		[0] = channel + username
-		[1] = chat message
-		[2] = nothing
-		[3] = rank icon
-
-	Friends game messages:
-		[0] = timestamp + message
-		[1] = nothing (except for the 'now talking...' message specifically which has the CLAN chat join message here...)
-		[2] = nothing
-		[3] = nothing
-
-	GIM broadcasts:
-		[0] = channel
-		[1] = chat message
-		[2] = nothing
-		[3] = nothing
-
-	Console message:
-		[0] = timestamp + message
-		[1] = nothing
-		[2] = nothing
-		[3] = nothing
-
-	GIM or Clan broadcast after world hopping (before you have reconnected to the channel):
-		[0] = nothing
-		[1] = message
-		[2] = nothing
-		[3] = nothing
-
-	Clan instruction message (?) after world hopping:
-		[0] = message
-		[1] = Did you know? tip
-		[2] = nothing
-		[3] = nothing
-
-	These appear in the children array in this order even if the individual items aren't rendered
-	 ex: Username is hidden for broadcasts, rank icon is hidden for public chat */
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
@@ -234,7 +176,6 @@ public class ChatWidgetEditor
 			return;
 		}
 
-		// The friends chat manager may become available after the initial login callback.
 		channelNameManager.updateFriendsChatName();
 
 		Widget chatbox = client.getWidget(InterfaceID.Chatbox.SCROLLAREA);
@@ -245,8 +186,6 @@ public class ChatWidgetEditor
 			Widget[] chatWidgets = chatbox.getDynamicChildren().clone();
 			Widget[] clickboxWidgets = chatbox.getStaticChildren().clone();
 
-			// TODO: See if we can avoid looping through every single widget even if there is no text there
-			// for (int i = 0; i < chats.length; i += 4)
 			chatWidgetGroups = Stream.iterate(
 					0,
 					i -> i < chatWidgets.length,
@@ -260,28 +199,24 @@ public class ChatWidgetEditor
 					Widget channelWidget = chatWidgets[i + 2];
 					if (channelWidget.getText().isEmpty())
 					{
-						// Channel is not at [2]. This is either a message with channel at [0] or a message without a channel
 
 						if (!chatWidgets[i].getText().isEmpty())
 						{
-							// Channel is at [0], this is a special message, adjust indices accordingly
 
 							Widget messageWidget = chatWidgets[i + 1];
-							// For some reason the fc now talking message specifically, has the CLAN chat join message here...
+
 							if (messageWidget.getText().isEmpty() || Text.removeTags(messageWidget.getText()).equals(CLAN_INSTRUCTION_MESSAGE))
 							{
-								// Friends chat message
 
 								messageWidgetIndex = i;
-								// Empty widget in this case, but still good to handle it
+
 								nameWidgetIndex = i + 1;
 							}
 							else
 							{
-								// Other special message
 
 								channelWidget = chatWidgets[i];
-								// Empty widget in this case, but still good to handle it
+
 								nameWidgetIndex = i + 2;
 							}
 						}
@@ -291,7 +226,7 @@ public class ChatWidgetEditor
 						}
 						else
 						{
-							// Clan/GIM broadcast after world hopping - just use default setup since we mainly care about the message in this case
+
 						}
 					}
 
@@ -349,23 +284,18 @@ public class ChatWidgetEditor
 
 					group.applyIndent();
 
-					// Calculate height last
 					group.calculateHeight(client);
 				})
 				.collect(Collectors.toList());
 
 			Collections.reverse(chatWidgetGroups);
 
-			// Calculate this after editing messages
 			int totalHeight = chatWidgetGroups.stream()
 				.map(ChatWidgetGroup::getHeight)
 				.reduce(0, Integer::sum);
 
-			// If we only have a few messages we want to place them at the bottom (chatbox.getHeight()) instead of the top (0).
-			//  If placing from the bottom, add padding first
 			int y = totalHeight >= chatbox.getHeight() ? 0 : chatbox.getHeight() - totalHeight - 2;
 
-			// Place widgets vertically
 			for (ChatWidgetGroup group : chatWidgetGroups)
 			{
 				group.place(y);
@@ -373,7 +303,6 @@ public class ChatWidgetEditor
 				y += group.getHeight();
 			}
 
-			// If placing at the top, add padding last
 			if (totalHeight >= chatbox.getHeight())
 			{
 				y += 2;
@@ -384,23 +313,20 @@ public class ChatWidgetEditor
 			chatbox.setScrollHeight(y);
 			chatbox.revalidateScroll();
 
-			// Replacing this script with Java allows us to avoid a clientThread.invokeLater as well as adjust the logic since we are modifying the true scroll height
 			scrollbar_resize(chatbox);
 
-			// Store this since rebuildchatbox changes the scroll position before we can
 			lastScrollDiff = chatbox.getScrollHeight() - chatbox.getScrollY();
 			lastViewportHeight = Math.max(0, chatbox.getHeight());
 		}
 		else
 		{
-			// chat closed - reset scroll
+
 			lastScrollDiff = -1;
 			chatboxScrolled = false;
 		}
 		lastChatTab = selectedChatTab.getValue();
 	}
 
-	// Script 72
 	private void scrollbar_resize(Widget scrollArea)
 	{
 		Widget scrollBarContainer = client.getWidget(InterfaceID.Chatbox.CHATSCROLLBAR);
@@ -438,27 +364,26 @@ public class ChatWidgetEditor
 		}
 	}
 
-	// Script 37
 	private void scrollbar_vertical_doscroll(Widget scrollBarContainer, Widget scrollArea, Widget scrollBar)
 	{
 		int int2;
 		if (lastChatTab != ChatTab.CLOSED.getValue() && lastScrollDiff != -1)
 		{
-			// Custom logic to restore our scroll values since rebuildchatbox will override them
+
 			int viewport = max(0, scrollArea.getHeight());
 			int distanceFromBottom = lastViewportHeight > 0 ? max(0, lastScrollDiff - lastViewportHeight) : 0;
 			int2 = max(scrollArea.getScrollHeight() - viewport - distanceFromBottom, 0);
 		}
 		else if (scrollArea.getHeight() < 0)
 		{
-			// For some reason scrollArea.getHeight is negative after the first login so we just default to 0
+
 			int2 = 0;
-			// The scrollHeight is also wrong after first login so just default to the base height
+
 			scrollArea.setScrollHeight(114);
 		}
 		else
 		{
-			// Original script logic
+
 			int2 = scrollArea.getScrollY();
 			int int3 = max(scrollArea.getScrollHeight() - scrollArea.getHeight(), 1);
 			int2 = max(min(int2, int3), 0);
@@ -470,7 +395,6 @@ public class ChatWidgetEditor
 		scrollbar_vertical_setdragger(scrollBarContainer, scrollArea, scrollBar);
 	}
 
-	// Script 740
 	private void scrollbar_vertical_setdragger(Widget scrollBarContainer, Widget scrollArea, Widget scrollBar)
 	{
 		int int2 = max(scrollArea.getScrollHeight() - scrollArea.getHeight(), 1);

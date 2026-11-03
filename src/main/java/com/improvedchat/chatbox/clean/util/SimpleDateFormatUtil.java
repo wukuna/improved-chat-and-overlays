@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,10 +33,6 @@ import java.text.SimpleDateFormat;
 public class SimpleDateFormatUtil
 {
 
-	// TODO: This technically should just be all chars a-z I think?
-	/**
-	 * Determine if a character is a valid SimpleDateFormat format character
-	 */
 	static boolean isFormatChar(char c)
 	{
 		return c == 'y' || c == 'Y' ||
@@ -55,15 +51,12 @@ public class SimpleDateFormatUtil
 			c == 'X';
 	}
 
-	/**
-	 * Convert a single format token to regex
-	 */
 	static String formatTokenToRegex(char token, int count)
 	{
 		switch (token)
 		{
-			case 'y': // Year
-			case 'Y': // Week-based year
+			case 'y':
+			case 'Y':
 				if (count == 2)
 				{
 					return "\\d{2}";
@@ -73,7 +66,7 @@ public class SimpleDateFormatUtil
 					return "\\d{4}";
 				}
 
-			case 'M': // Month
+			case 'M':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
@@ -88,24 +81,24 @@ public class SimpleDateFormatUtil
 				}
 				return "[A-Z][a-z]+";
 
-			case 'w': // Week of year
+			case 'w':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-			case 'W': // Week of month
+			case 'W':
 				return "\\d";
 
-			case 'd': // Day of month
+			case 'd':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-			case 'D': // Day of year
+			case 'D':
 				if (count == 1)
 				{
 					return "\\d{1,3}";
@@ -116,63 +109,62 @@ public class SimpleDateFormatUtil
 				}
 				return "\\d{3}";
 
-			case 'F': // Day of week in month
+			case 'F':
 				return "\\d";
 
-			case 'E': // Day name
+			case 'E':
 				if (count < 4)
 				{
 					return "[A-Z][a-z]{2}";
 				}
 				return "[A-Z][a-z]+";
 
-			case 'u': // Day of week (1-7, Monday = 1)
+			case 'u':
 				return "\\d";
 
-			case 'a': // AM/PM
+			case 'a':
 				return "AM|PM";
 
-			case 'H': // Hour (0-23)
+			case 'H':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-			case 'h': // Hour (1-12)
+			case 'h':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-			case 'K': // Hour (0-11)
-			case 'k': // Hour (1-24)
+			case 'K':
+			case 'k':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-			case 'm': // Minute
-			case 's': // Second
+			case 'm':
+			case 's':
 				if (count == 1)
 				{
 					return "\\d{1,2}";
 				}
 				return "\\d{2}";
 
-
-			case 'S': // Millisecond/Nanosecond
+			case 'S':
 				return "\\d{" + count + "}";
 
-			case 'z': // Time zone abbreviation
+			case 'z':
 				return "[A-Z]{3,4}";
 
-			case 'Z': // Time zone offset
+			case 'Z':
 				return "[+-]\\d{4}";
 
-			case 'X': // ISO time zone (±HH:mm, ±HHMM, or Z)
+			case 'X':
 				if (count == 1)
 				{
 					return "[+-]\\d{2}|Z";
@@ -188,59 +180,56 @@ public class SimpleDateFormatUtil
 		}
 	}
 
-	/**
-	 * Get the maximum expanded size for a format token
-	 */
 	static int getExpandedSize(char token, int count)
 	{
 		switch (token)
 		{
-			case 'y': // Year
+			case 'y':
 				return count == 2 ? 2 : 4;
-			case 'Y': // Week-based year
+			case 'Y':
 				return 4;
-			case 'M': // Month
+			case 'M':
 				if (count == 1 || count == 2)
 					return 2;
 				if (count == 3)
 					return 3;
-				return 9; // "September"
-			case 'w': // Week of year
+				return 9;
+			case 'w':
 				return 2;
-			case 'W': // Week of month
+			case 'W':
 				return 1;
-			case 'd': // Day of month
+			case 'd':
 				return 2;
-			case 'D': // Day of year
+			case 'D':
 				return 3;
-			case 'F': // Day of week in month
+			case 'F':
 				return 1;
-			case 'E': // Day name
-				return count < 4 ? 3 : 9; // "Mon" or "Monday"
-			case 'u': // Day of week (1-7)
+			case 'E':
+				return count < 4 ? 3 : 9;
+			case 'u':
 				return 1;
-			case 'a': // AM/PM
+			case 'a':
 				return 2;
-			case 'H': // Hour (0-23)
+			case 'H':
 				return 2;
-			case 'h': // Hour (1-12)
+			case 'h':
 				return 2;
-			case 'K': // Hour (0-11)
+			case 'K':
 				return 2;
-			case 'k': // Hour (1-24)
+			case 'k':
 				return 2;
-			case 'm': // Minute
+			case 'm':
 				return 2;
-			case 's': // Second
+			case 's':
 				return 2;
-			case 'S': // Millisecond
+			case 'S':
 				return count;
-			case 'z': // Time zone
-				return 4; // "EST" TODO EST is 3 letters?
-			case 'Z': // Time zone offset
-				return 5; // "+0000"
-			case 'X': // ISO time zone
-				return 6; // "+00:00"
+			case 'z':
+				return 4;
+			case 'Z':
+				return 5;
+			case 'X':
+				return 6;
 			default:
 				return count;
 		}

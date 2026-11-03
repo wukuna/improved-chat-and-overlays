@@ -8,7 +8,6 @@ import net.runelite.client.plugins.chatfilter.ChatFilterConfig;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.StringUtils;
 
-/** Mirrors the built-in Chat Filter word/regex matching for overlay messages. */
 public final class ChatMessageFilter {
     private List<Pattern> patterns = new ArrayList<>();
     private boolean stripAccents;

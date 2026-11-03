@@ -2,7 +2,6 @@ package com.improvedchat.overlay;
 
 import java.awt.Color;
 
-/** Applies the final overlay-only color override. */
 public final class OverlayStyleEngine {
     private OverlayStyleEngine() {
     }

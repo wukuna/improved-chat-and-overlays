@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -50,9 +50,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 
-/**
- * Tracks current and previous chat channel names for use in the ChatWidgetEditor
- */
 @Slf4j
 @Singleton
 public class ChannelNameManager
@@ -67,7 +64,6 @@ public class ChannelNameManager
 	@Inject
 	private ImprovedChatConfig config;
 
-	// Store these as a collection so that even if you leave a channel the chats will still be "cleaned"
 	@Getter
 	private final List<String> clanNames = new ArrayList<>();
 	@Getter
@@ -151,14 +147,14 @@ public class ChannelNameManager
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		// Read the initialized channel on the client tick, including joins and resyncs.
+
 		updateFriendsChatName();
 	}
 
 	public void updateFriendsChatName()
 	{
 		FriendsChatManager friendsChatManager = client.getFriendsChatManager();
-		// The manager can be unavailable during login or after leaving the channel.
+
 		if (friendsChatManager != null)
 		{
 			addName(friendsChatNames, friendsChatManager.getName());

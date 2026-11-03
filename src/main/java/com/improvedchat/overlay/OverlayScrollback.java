@@ -8,14 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-/** A session-only cursor anchored to a message and wrapped line, never to a changing list index. */
 public final class OverlayScrollback {
     private long anchor;
     private int anchorLine;
     private int pendingLines;
     private int newerMessages;
 
-    // Mouse input and painting run on different threads.
     public synchronized void scroll(int lines) {
         pendingLines = Math.max(-300, Math.min(300, pendingLines + lines));
     }
@@ -61,7 +59,7 @@ public final class OverlayScrollback {
             else { index++; line = 0; }
             movement++;
         }
-        // Clamp to the oldest full page, including when the oldest retained message was evicted.
+
         int firstIndex = index;
         int firstLine = line;
         int available = 1;

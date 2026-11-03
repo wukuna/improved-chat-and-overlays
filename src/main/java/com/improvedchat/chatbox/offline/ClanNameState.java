@@ -4,12 +4,6 @@ import com.improvedchat.model.MessageNodeIdentity;
 import java.util.Objects;
 import net.runelite.api.MessageNode;
 
-/**
- * Tracks the unmodified sender name for one logical clan chat message.
- *
- * MessageNode objects can be recycled. The identity snapshot prevents a name saved for an older
- * message from ever being written onto a newer message which happens to reuse the same node object.
- */
 final class ClanNameState
 {
     private final MessageNodeIdentity identity;
@@ -37,8 +31,6 @@ final class ClanNameState
     {
         String current = normalize(currentName);
 
-        // Respect another plugin changing the name on the same logical message. Treat its new value
-        // as the baseline rather than restoring our older copy over it.
         if (!Objects.equals(current, lastAppliedName) && !Objects.equals(current, originalName))
         {
             originalName = current;

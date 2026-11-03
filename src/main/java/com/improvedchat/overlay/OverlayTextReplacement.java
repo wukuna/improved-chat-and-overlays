@@ -3,7 +3,6 @@ package com.improvedchat.overlay;
 import java.util.Locale;
 import java.util.UUID;
 
-/** One literal, complete-message replacement. Edits create new snapshots for the renderer. */
 public final class OverlayTextReplacement {
     private String id = UUID.randomUUID().toString();
     private String original = "";

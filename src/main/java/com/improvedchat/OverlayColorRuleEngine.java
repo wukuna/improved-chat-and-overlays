@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.runelite.api.ChatMessageType;
 
-/** Overlay-only styling matcher. Message Color Rules are handled earlier by MessageColorRuleEngine. */
 public final class OverlayColorRuleEngine {
     public enum Kind { NONE, RAINBOW }
 
@@ -42,7 +41,6 @@ public final class OverlayColorRuleEngine {
         return c == null ? ChatColorSource.AUTOMATIC : c.chatColorSource();
     }
 
-    /** Returns only overlay-only decisions. Message Color Rules are applied by the preceding color layer. */
     public static Decision decide(String rawMessage, ChatMessageType type) {
         return decide(rawMessage, type, config);
     }

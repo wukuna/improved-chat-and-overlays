@@ -16,7 +16,6 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
-/** A paint-only frame following the visible native chat area, with no input targets. */
 @Singleton
 public final class NativeChatBorderOverlay extends Overlay {
     private final Client client;

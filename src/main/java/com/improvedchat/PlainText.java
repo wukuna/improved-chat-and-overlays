@@ -4,7 +4,6 @@ import javax.swing.AbstractButton;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 
-/** User-authored names are text, never Swing HTML or image resources. */
 final class PlainText
 {
     private PlainText() { }

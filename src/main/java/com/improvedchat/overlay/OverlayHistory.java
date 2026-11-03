@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import net.runelite.api.ChatMessageType;
 
-/** A view of captured history; never removes or changes shared messages. */
 public final class OverlayHistory {
     private static final java.util.regex.Pattern COLOR_TAG = java.util.regex.Pattern.compile("</?col[^>]*>");
     private OverlayHistory() { }

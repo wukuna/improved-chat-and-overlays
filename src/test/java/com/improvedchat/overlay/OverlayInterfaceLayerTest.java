@@ -45,7 +45,7 @@ public class OverlayInterfaceLayerTest {
             assertBehind(manager, overlay);
 
             overlay.setPreferredLocation(new Point(300, 200));
-            manager.saveOverlay(overlay); // Rebuilds the real manager's routing after a drag.
+            manager.saveOverlay(overlay);
             assertBehind(manager, overlay);
             overlay.setPreferredPosition(OverlayPosition.TOP_RIGHT);
             manager.saveOverlay(overlay);

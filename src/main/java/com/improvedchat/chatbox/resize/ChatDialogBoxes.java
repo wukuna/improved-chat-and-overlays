@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.chatbox.resize.internal.Widgets;
@@ -61,7 +61,6 @@ public class ChatDialogBoxes {
         this.client = client;
     }
 
-    // Re-prime the cached open-state on enable; the singleton survives disable -> enable
     void reset() {
         dialogOpen = isDialogOpen();
     }
@@ -70,15 +69,11 @@ public class ChatDialogBoxes {
         GameState state = client.getGameState();
         if (state != GameState.LOGGED_IN && state != GameState.LOADING) return false;
 
-        // Message-layer text inputs, built into Chatbox.MES_LAYER rather than opening a sub-interface
         if (client.getVarcIntValue(VarClientID.MESLAYERMODE) != InputType.NONE.getType()) return true;
 
-        // RuneLite's own prompts (e.g. quest search) set no varc, and this is the only signal the 677
-        // post-fire apply has: MESLAYERMODE above isn't written until after that script returns
         Widget mesLayer = client.getWidget(InterfaceID.Chatbox.MES_LAYER);
         if (mesLayer != null && !mesLayer.isHidden()) return true;
 
-        // Any sub-interface opened into a chatbox-group component, keyed on mount slot
         for (WidgetNode node : client.getComponentTable()) {
             if (WidgetUtil.componentToInterface((int) node.getHash()) == CHATBOX_GROUP) return true;
         }
@@ -86,9 +81,6 @@ public class ChatDialogBoxes {
         return false;
     }
 
-    // Re-place the dialog groups mounted into the chatbox after a resize; each is its own widget group, so the chat's
-    // revalidate cascade never reaches it. The DIALOGS_TO_CENTER roots sit ABSOLUTE at a stock-width offset, so they
-    // are centered by hand instead. Callers gate this on a dialog being open, keeping the walk off the idle path.
     void centerDialogs() {
         alignMounted();
         for (int id : DIALOGS_TO_CENTER) {
@@ -100,8 +92,6 @@ public class ChatDialogBoxes {
         }
     }
 
-    // Hand the dialogs back to the engine's placement at the restored stock size. Deliberately a re-place rather than
-    // a clear: setForcedPosition(-1, -1) is a position too, and nothing realigns a mounted root in fixed layout.
     void resetDialogPositions() {
         alignMounted();
         for (int id : DIALOGS_TO_CENTER) {
@@ -111,7 +101,6 @@ public class ChatDialogBoxes {
         }
     }
 
-    // Re-run the engine's alignment for every group mounted into the chatbox, against the slot it hangs in
     private void alignMounted() {
         for (WidgetNode node : client.getComponentTable()) {
             if (WidgetUtil.componentToInterface((int) node.getHash()) != CHATBOX_GROUP) continue;
@@ -124,10 +113,9 @@ public class ChatDialogBoxes {
     private static void align(Widget widget, Widget slot) {
         int x = aligned(widget.getXPositionMode(), slot.getWidth(), widget.getWidth(), widget.getOriginalX());
         int y = aligned(widget.getYPositionMode(), slot.getHeight(), widget.getHeight(), widget.getOriginalY());
-        if (x >= 0 && y >= 0) place(widget, x, y); // Otherwise a mode we don't reproduce: leave the placement alone
+        if (x >= 0 && y >= 0) place(widget, x, y);
     }
 
-    // Where the engine's alignment would put a widget on one axis, or -1 for the fractional modes no dialog group uses
     private static int aligned(int mode, int slotSize, int size, int original) {
         if (mode == WidgetPositionMode.ABSOLUTE_LEFT) return original;
         if (mode == WidgetPositionMode.ABSOLUTE_CENTER) return Math.max(0, (slotSize - size) / 2 + original);
@@ -139,7 +127,6 @@ public class ChatDialogBoxes {
         if (x != widget.getRelativeX() || y != widget.getRelativeY()) widget.setForcedPosition(x, y);
     }
 
-    // Polled edge detection; input prompts (e.g. typing a private message) announce themselves no other way
     boolean dialogOpenStateChanged() {
         boolean open = isDialogOpen();
         boolean changed = open != dialogOpen;

@@ -9,7 +9,6 @@ import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.Paint;
 import java.awt.geom.Point2D;
 
-/** Cosmetic animation on the existing render clock; no timers or retained runtime state. */
 public final class RgbAnimation {
     private static final float[] STOPS = {0f, 1f / 6, 2f / 6, 3f / 6, 4f / 6, 5f / 6, 1f};
 

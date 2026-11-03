@@ -9,7 +9,6 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
-/** One owned, non-modal editor. Opening another overlay reuses its size and position. */
 class OverlayEditorWindow {
     private JDialog dialog;
 

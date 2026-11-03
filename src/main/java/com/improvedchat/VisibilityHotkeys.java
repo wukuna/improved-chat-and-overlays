@@ -11,7 +11,6 @@ import com.improvedchat.overlay.OverlayConfig;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.input.KeyListener;
 
-/** One AWT listener fans out a shared binding before consuming the event. No client API here. */
 final class VisibilityHotkeys implements KeyListener {
     private final Consumer<Activation> action;
     private final Set<Integer> held = new HashSet<>();

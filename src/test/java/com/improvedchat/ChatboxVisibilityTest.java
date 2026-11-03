@@ -45,7 +45,7 @@ public class ChatboxVisibilityTest {
     @Test public void scriptsRunWithNativeStateAndTheirVisibilityWinsOnRestore() throws Exception {
         Fixture f=new Fixture(); f.visibility.toggle();
         f.visibility.onScriptPreFired(new ScriptPreFired(113)); assertFalse(f.widgets.get(AREA).isSelfHidden());
-        f.widgets.get(AREA).setHidden(true); // Native script hides it for a different reason.
+        f.widgets.get(AREA).setHidden(true);
         f.visibility.onScriptPostFired(new ScriptPostFired(113)); f.visibility.reset();
         assertTrue(f.widgets.get(AREA).isSelfHidden());assertFalse(f.widgets.get(BAR).isSelfHidden());
     }

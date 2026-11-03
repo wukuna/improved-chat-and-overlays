@@ -18,8 +18,7 @@ public class ChatHudRelayoutRegressionTest {
             Fixture f = new Fixture(modern);
             f.anchors.sync(16);
             assertTrue(f.anchors.consumeLayoutChanged());
-            // The native toplevel_resize procedure writes the stock HUD reserve.
-            // Restoring our same target must not request another native relayout.
+
             for (int frame = 0; frame < 300; frame++) {
                 f.hud.reserve = STOCK_RESERVE;
                 f.anchors.sync(16);

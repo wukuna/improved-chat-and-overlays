@@ -136,7 +136,7 @@ public class OverlayPresentationTest {
                     colors, Collections.emptyList(), Color.RED, overlay, ChatColorSource.OPAQUE);
             assertEquals(Color.MAGENTA, colorOf(lines, "Hello"));
             assertEquals(Color.MAGENTA, colorOf(lines, "World"));
-            assertEquals(Color.RED, colorOf(lines, "Alice")); // Explicit offline-name choice retains priority.
+            assertEquals(Color.RED, colorOf(lines, "Alice"));
         } finally { g.dispose(); }
     }
 

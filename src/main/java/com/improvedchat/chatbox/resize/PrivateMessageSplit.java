@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -54,7 +54,7 @@ public class PrivateMessageSplit {
     }
 
     void resizePmBox(int slotW) {
-        if (!config.rewrapPrivateChat()) { // Setting disabled: revert once if resized earlier
+        if (!config.rewrapPrivateChat()) {
             restorePmBox();
         } else {
             pmBoxResized = true;
@@ -69,24 +69,21 @@ public class PrivateMessageSplit {
         setPmBoxWidth(ChatGeometry.CHATBOX_SPRITE_W);
     }
 
-    // Fixed only: its lines sit a flat offset above the container's bottom, so the container places them.
-    // Resizable bakes the chat height into that offset instead, and there the rebuild owns the placement.
     void setPmBoxHeight(int height) {
         Widget pmChat = client.getWidget(InterfaceID.PmChat.CONTAINER);
-        if (pmChat == null) return; // Split private chat off or box not built yet
-        if (pmChat.getHeight() == height) return; // Already positioned
+        if (pmChat == null) return;
+        if (pmChat.getHeight() == height) return;
 
-        Widgets.setHeight(pmChat, height); // Must use literal height
+        Widgets.setHeight(pmChat, height);
         Widgets.revalidateChildren(pmChat);
     }
 
     private void setPmBoxWidth(int slotW) {
         Widget pmChat = client.getWidget(InterfaceID.PmChat.CONTAINER);
-        if (pmChat == null) return; // Split private chat off or box not built yet
+        if (pmChat == null) return;
         Widget pmContainer = pmChat.getParent();
         if (pmContainer == null) return;
 
-        // Don't touch the fixed layout's MINUS-width container
         if (pmContainer.getWidthMode() != WidgetSizeMode.ABSOLUTE) return;
 
         if (pmContainer.getOriginalWidth() != slotW) {

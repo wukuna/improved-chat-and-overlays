@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,15 +26,14 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize.internal;
 
-// Stock chatbox geometry shared by both layouts' apply/restore paths
 public final class ChatGeometry {
     private ChatGeometry() {}
 
-    public static final int CHATBOX_SPRITE_W = 519; // Stock chat width (locked in fixed layout)
-    public static final int CHATBOX_SPRITE_H = 142; // Stock background sprite height
-    public static final int CHATBOX_SLOT_H = 165; // Chat box plus tabs bar
-    public static final int FIXED_CHAT_Y = 338; // Stock top of the chat slot in fixed layout
+    public static final int CHATBOX_SPRITE_W = 519;
+    public static final int CHATBOX_SPRITE_H = 142;
+    public static final int CHATBOX_SLOT_H = 165;
+    public static final int FIXED_CHAT_Y = 338;
 }

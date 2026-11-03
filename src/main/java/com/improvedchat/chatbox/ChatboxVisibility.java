@@ -14,7 +14,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.Subscribe;
 
-/** Client-thread ownership of the regular chat area and complete button bar. */
 @Singleton
 public final class ChatboxVisibility {
     @Inject private Client client;
@@ -47,7 +46,7 @@ public final class ChatboxVisibility {
         restore();
         if (!hidden || client.getGameState() != GameState.LOGGED_IN || scriptDepth != 0) return;
         hide(InterfaceID.Chatbox.CONTROLS);
-        // CHATAREA also contains dialogue prompts. Keep those usable while hiding regular chat.
+
         if (dialogs.isDialogOpen()) {
             hide(InterfaceID.Chatbox.CHATDISPLAY);
         } else {
@@ -61,7 +60,7 @@ public final class ChatboxVisibility {
     }
 
     @Subscribe(priority = 20) public void onScriptPreFired(ScriptPreFired event) {
-        // Let native scripts see native visibility and capture their new state afterwards.
+
         if (scriptDepth++ == 0) restore();
     }
 

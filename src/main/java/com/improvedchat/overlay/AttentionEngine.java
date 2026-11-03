@@ -13,7 +13,6 @@ import java.awt.Stroke;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Runtime attention/flash state for overlay messages and overlay chrome. */
 public final class AttentionEngine {
     private static final ThreadLocal<OverlayConfig> CURRENT = new ThreadLocal<>();
     private static final Map<String, AlertState> STATES = new ConcurrentHashMap<>();
@@ -43,13 +42,11 @@ public final class AttentionEngine {
         return pulsedAlpha(baseAlpha, now, currentState.startedAt, cfg.getAttentionSpeed());
     }
 
-    /** Render background, pulsing it only when Background is selected in Attention. */
     public static Color adjustBackground(OverlayConfig cfg, Color base, long now) {
         Color c = base == null ? new Color(0, 0, 0, 0) : base;
         if (cfg == null || !cfg.isFlashEnabled() || !cfg.isFlashBackground()) return c;
         AlertState s = activeOverlayState(cfg, now);
-        // Keep the render path stable for flash-only backgrounds without making the normal
-        // background visibly enabled. Alpha 1 is effectively transparent but prevents size jitter.
+
         if (s == null) {
             return c.getAlpha() == 0 ? new Color(c.getRed(), c.getGreen(), c.getBlue(), 1) : c;
         }
@@ -57,12 +54,11 @@ public final class AttentionEngine {
         int normalAlpha = c.getAlpha();
         int sourceAlpha = normalAlpha > 0 ? normalAlpha : 170;
         int pulse = pulsedAlpha(sourceAlpha, now, s.startedAt, cfg.getAttentionSpeed());
-        // A disabled background appears only during the pulse and returns to transparent afterwards.
+
         if (normalAlpha == 0) pulse = Math.max(1, pulse - 28);
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, Math.min(255, pulse)));
     }
 
-    /** Draw optional static/flashing border after message rendering. */
     public static void drawBorder(Graphics2D g, OverlayConfig cfg, int width, int height, long now) {
         if (g == null || cfg == null || width <= 1 || height <= 1) return;
         AlertState s = cfg.isFlashEnabled() && cfg.isFlashBorder() ? activeOverlayState(cfg, now) : null;

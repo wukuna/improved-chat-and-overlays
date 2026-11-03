@@ -26,14 +26,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.util.Text;
 
-/**
- * Shared clan presentation state for native chat and Improved Chat overlays.
- *
- * Rank icons are resolved through RuneLite's ChatIconManager. The offline marker is also registered
- * through ChatIconManager so it survives mod-icon array rebuilds performed by RuneLite or another
- * plugin. Online state is deliberately reported as unknown while the relevant clan channel is not
- * available, avoiding false "offline" markers during login/world-hop reconnects.
- */
 @Singleton
 public final class ClanChatPresentationService
 {
@@ -128,7 +120,7 @@ public final class ClanChatPresentationService
     @Subscribe
     public void onClanMemberLeft(ClanMemberLeft event)
     {
-        // The event still has the member rank, so retain the icon for messages after they leave.
+
         cacheMember(event.getClanChannel(), event.getClanMember());
     }
 
@@ -257,8 +249,7 @@ public final class ClanChatPresentationService
         Graphics2D graphics = image.createGraphics();
         try
         {
-            // ImageUtil.getImageIndexedSprite only keeps fully opaque pixels. Do not antialias this
-            // marker or its partially-transparent edge pixels will disappear from the indexed sprite.
+
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
             graphics.setColor(new Color(150, 150, 150, 255));
             graphics.setStroke(new BasicStroke(1f));

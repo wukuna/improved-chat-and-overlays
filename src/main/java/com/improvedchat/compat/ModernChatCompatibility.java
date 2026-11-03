@@ -8,10 +8,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginManager;
 
-/**
- * Runtime-only compatibility adapter for the standalone Modern Chat plugin.
- * No Modern Chat classes are imported and no hard dependency is created.
- */
 @Singleton
 public final class ModernChatCompatibility
 {
@@ -34,10 +30,6 @@ public final class ModernChatCompatibility
         return ownership(active);
     }
 
-    /**
-     * During RuneLite startup/config-enable transitions a plugin can be enabled before startUp()
-     * has completed. Treat that short window as ownership so Improved Chat yields first.
-     */
     public ModernChatOwnership startupSnapshot()
     {
         Plugin plugin = findModernChatPlugin();

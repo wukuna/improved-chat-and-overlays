@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -127,7 +127,7 @@ public class ChatWidgetGroup
 		if (!message.getText().isEmpty() && message.getWidth() > 0)
 		{
 			int numLines = getTextLineCount(message.getText(), message.getWidth(), messageIndentSpaces, client);
-			int height = numLines * 14; // Height of each line is always 14
+			int height = numLines * 14;
 			message.setOriginalHeight(height);
 			message.revalidate();
 
@@ -141,7 +141,7 @@ public class ChatWidgetGroup
 	{
 		if (channelType == ChatChannel.FRIENDS_CHAT)
 		{
-			// For some reason the fc channel width is the entire length of the chatbox so to make things easier we adjust that here
+
 			channel.setOriginalWidth(message.getOriginalX() - channel.getOriginalX());
 			channel.revalidate();
 		}
@@ -154,19 +154,16 @@ public class ChatWidgetGroup
 		int channelWidth = 0;
 		int prefixWidth = 0;
 
-		// TODO: See if there's something that we are missing when measuring so we can avoid adding all these hardcoded offsets
 		if (channelType != null)
 		{
 			switch (config.indentationMode())
 			{
-				// Intentionally fallthrough
+
 				case START:
-					// extractTimestamp handles indents for start already
+
 					if (isFixedWidthTimestampEnabled)
 					{
-						// Fixed-width timestamps reserve an exact pixel slot. Wrapped-line
-						// indentation must use that slot width rather than the variable width of
-						// the timestamp text that happened to be rendered on this message.
+
 						prefixWidth = timestampWidth;
 						indentWidth += prefixWidth;
 
@@ -200,7 +197,7 @@ public class ChatWidgetGroup
 					}
 				case NAME:
 					int nameWidth = 0;
-					// FC puts name + channel into the channel widget
+
 					if (channelType == ChatChannel.FRIENDS_CHAT)
 					{
 						if (isFixedWidthTimestampEnabled)
@@ -236,7 +233,7 @@ public class ChatWidgetGroup
 						indentWidth -= 4;
 					}
 				case MESSAGE:
-					// Already set by default
+
 			}
 		}
 
@@ -257,9 +254,7 @@ public class ChatWidgetGroup
 	{
 		if (messageIndentSpaces > 0)
 		{
-			// Indentation mode still uses native text spacing for wrapped-message indentation.
-			// Fixed-width timestamps no longer participate in this approximation; they own a real
-			// pixel slot in extractTimestamp/applyFixedTimestampSlot.
+
 			message.setText(" ".repeat(messageIndentSpaces) + message.getText());
 			message.revalidate();
 		}
@@ -277,17 +272,15 @@ public class ChatWidgetGroup
 		int removedWidth = currentWidth - newWidth;
 
 		String newText = channel.getText()
-			// TODO: Target the channel name more precisely, this should do for now to avoid targeting timestamps in brackets
+
 			.replaceFirst(wrapWithChannelNameRegex(text), newChannelName);
 
-		// Remove trailing spaces - probably only happens with timestamps turned on
 		if (newText.endsWith(" "))
 		{
 			newText = newText.substring(0, newText.length() - 1);
 			removedWidth += getTextLength(" ", client);
 		}
 
-		// Remove double spaces - mainly found in friends chat since it has sender + username
 		if (newText.contains("  "))
 		{
 			newText = newText.replaceFirst(" {2}", " ");
@@ -296,16 +289,13 @@ public class ChatWidgetGroup
 
 		channel.setText(newText);
 
-		// Shift widgets X left if channel was removed
 		shiftLeft(rank, removedWidth);
 		shiftLeft(name, removedWidth);
 		shiftLeft(message, removedWidth);
 
-		// Expand the width of messages if channel was removed
 		message.setOriginalWidth(message.getOriginalWidth() + removedWidth);
 		message.revalidate();
 
-		// Reduce channel width if it was removed
 		channel.setOriginalWidth(channel.getOriginalWidth() - removedWidth);
 		channel.revalidate();
 
@@ -323,7 +313,6 @@ public class ChatWidgetGroup
 			shiftLeft(name, removedWidth);
 			shiftLeft(message, removedWidth);
 
-			// Expand the width of messages if rank was removed
 			expand(message, removedWidth);
 		}
 	}
@@ -396,9 +385,6 @@ public class ChatWidgetGroup
 		int targetWidth = max(0, targetTimestampWidth);
 		int actualWidth = max(0, actualTimestampWidth);
 
-		// The fixed timestamp renderer draws over an exact-width run of native chat spaces.
-		// Keeping the timestamp-bearing widget at its RuneLite-provided X coordinate is critical:
-		// moving that widget moves the timestamp itself and any overlays anchored to the chat line.
 		int paddingSpaces = (targetWidth + spaceWidth - 1) / spaceWidth;
 		targetWidth = paddingSpaces * spaceWidth;
 		timestampWidget.setText(" ".repeat(paddingSpaces) + remainingText);
@@ -407,10 +393,7 @@ public class ChatWidgetGroup
 		int delta = targetWidth - actualWidth;
 		if (timestampWidget == channel)
 		{
-			// Normal player/channel lines keep the timestamp and any remaining channel text in the
-			// channel widget. Grow/shrink that widget by only the width difference, then move the
-			// separate rank, sender, and message widgets by the same delta. The timestamp origin
-			// itself never moves.
+
 			channel.setOriginalWidth(max(0, channel.getOriginalWidth() + delta));
 			channel.revalidate();
 
@@ -418,9 +401,7 @@ public class ChatWidgetGroup
 			shiftX(name, delta);
 			shiftXPreserveRight(message, delta);
 		}
-		// Game/system lines keep timestamp and body in one message widget. The exact-width space
-		// prefix reserves the slot without changing widget geometry, so the body naturally begins
-		// after the timestamp while the right edge and wrapping area remain RuneLite-native.
+
 	}
 
 	private void shiftX(Widget widget, int amount)

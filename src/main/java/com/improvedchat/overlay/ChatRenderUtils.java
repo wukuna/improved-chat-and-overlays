@@ -30,22 +30,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Stateless rendering utilities shared by all overlays. Handles two main concerns:
- *
- * <p><b>Text parsing</b> — Converts raw message strings containing OSRS markup into lists of
- * {@link TextSegment}s. Two parsers exist:
- * <ul>
- *   <li>{@link #parseTextWithIcons} — handles {@code <img=N>} icon tags and entity references
- *       ({@code <lt>}, {@code <gt>}). Used for sender names.</li>
- *   <li>{@link #parseTextWithColoursAndIcons} — additionally handles {@code <col=RRGGBB>},
- *       {@code </col>}, {@code <br>}, and named colour tags. Used for message bodies.</li>
- * </ul>
- *
- * <p><b>Icon caching</b> — Converts RuneLite's {@link IndexedSprite} mod icons to
- * {@link BufferedImage} on first access and caches them. The cache is invalidated when
- * the modIcons array reference changes (e.g. after a plugin loads new icons).
- */
 public final class ChatRenderUtils {
 
     private static final Pattern IMG_TAG_PATTERN = Pattern.compile("<img=(\\d+)>");
@@ -144,10 +128,6 @@ public final class ChatRenderUtils {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.max(0, Math.min(255, alpha)));
     }
 
-    /**
-     * Returns a cached BufferedImage for the given mod icon index.
-     * Converts and caches on first access; clears cache when the modIcons array reference changes.
-     */
     public static BufferedImage getModIconImage(int iconId, IndexedSprite[] modIcons) {
         if (modIcons == null || iconId < 0 || iconId >= modIcons.length) {
             return null;
@@ -222,10 +202,6 @@ public final class ChatRenderUtils {
         return 2 * digitWidth + unitWidth + metrics.charWidth(' ');
     }
 
-    /**
-     * Builds render lines for any message type. Handles sender prefixes for PMs,
-     * public chat, friends chat, and clan chat automatically based on the message type.
-     */
     public static List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics,
             int widgetWidth, long currentTime, long fadeOutMs, boolean wrapText, Color textColor,
             boolean retainContextualColours, boolean hideDuplicateCount,
@@ -288,7 +264,6 @@ public final class ChatRenderUtils {
             }
         }
 
-        // Build header (timestamp + optional sender prefix)
         List<TextSegment> headerSegments = new ArrayList<>();
         int headerWidth = 0;
 
@@ -304,8 +279,7 @@ public final class ChatRenderUtils {
                 headerWidth += width;
             }
             if (relative) {
-                // Reserve pixels, not spaces: proportional fonts and RGB styles must keep
-                // the sender, message wrapping and alignment steady as the age changes.
+
                 int columnWidth = timeAgoColumnWidth(metrics);
                 headerSegments.add(new TextSegment("", TextSegment.SPACER,
                         Math.max(0, columnWidth - headerWidth), null));
@@ -359,7 +333,6 @@ public final class ChatRenderUtils {
             headerWidth += metrics.stringWidth(": ");
         }
 
-        // Build message body
         String messageText = msg.getMessage();
         if (messageText != null && messageText.length() > MAX_MESSAGE_LENGTH) {
             messageText = messageText.substring(0, MAX_MESSAGE_LENGTH) + "...";
@@ -369,7 +342,6 @@ public final class ChatRenderUtils {
             messageText = messageText + " (" + msg.getCount() + ")";
         }
 
-        // Migrated rules retain their old precedence; new rules may override overlay defaults.
         OverlayColorRuleEngine.Decision decision = rulesActive
                 ? (overlay == null ? OverlayColorRuleEngine.decide(messageText, type) : OverlayColorRuleEngine.decide(messageText, type, rules))
                 : OverlayColorRuleEngine.Decision.none();
@@ -378,14 +350,13 @@ public final class ChatRenderUtils {
         if (matchedStyle == com.improvedchat.model.AnimatedTextStyle.NORMAL) matchedStyle = null;
         Color forceColor = rulesActive ? (overlay == null ? MessageColorRuleEngine.colorFor(messageText, type)
                 : MessageColorRuleEngine.colorFor(messageText, type, rules)) : null;
-        // An all-message effect wins consistently, including static RGB, when
-        // the user disables highlight overrides. Keep the saved rules intact.
+
         if (overlay != null && !overlay.getTextSettings().isHighlightsOverrideDefaults()
                 && overlay.getAnimatedTextStyle() != com.improvedchat.model.AnimatedTextStyle.NORMAL) {
             matchedStyle = null;
             forceColor = null;
         }
-        // Highlight/flash/filter rules still use the real message. Replace only the painted body.
+
         String display = OverlayTextReplacements.displayText(overlay, msg.getMessage());
         if (!java.util.Objects.equals(display, msg.getMessage())) {
             messageText = display;
@@ -427,7 +398,7 @@ public final class ChatRenderUtils {
                     || overlay.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.NORMAL;
             com.improvedchat.model.AnimatedTextStyle bodyStyle = override
                     ? (matchedStyle != null ? matchedStyle : forceColor != null ? com.improvedchat.model.AnimatedTextStyle.NORMAL : null) : null;
-            // Prefixes keep the overlay default. Only this matching message body is overridden.
+
             for (RenderLine line : lines) {
                 for (TextSegment segment : line.segments) {
                     if (!headerSegments.contains(segment)) segment.textStyle = bodyStyle;
@@ -501,10 +472,6 @@ public final class ChatRenderUtils {
         return segments;
     }
 
-    /**
-     * Parses text with full color tag support, icon tags, and line breaks.
-     * Used for system/game messages that can contain color formatting.
-     */
     public static List<TextSegment> parseTextWithColoursAndIcons(String text, FontMetrics metrics,
             IndexedSprite[] modIcons, boolean retainContextualColours, Color textColor,
             FontSize fontSize, ChatColorConfig chatColorConfig) {
@@ -567,9 +534,9 @@ public final class ChatRenderUtils {
                 else if (tag.equals("shad")) shadow = Color.BLACK;
                 else if (tag.startsWith("shad=")) shadow = tagColor(tag.substring(5));
                 else if (tag.equals("/shad")) shadow = null;
-                // Native font rendering skips unknown tags; escaped angle brackets remain text.
+
             } catch (NumberFormatException ignored) {
-                // Malformed native formatting tags must not break a chat overlay.
+
             }
         }
         if (currentText.length() > 0) {
@@ -579,7 +546,6 @@ public final class ChatRenderUtils {
 
         return segments;
     }
-
 
     private static Color tagColor(String hex) {
         if (hex.isEmpty() || hex.length() > 6 || !hex.matches("[0-9a-fA-F]+")) throw new NumberFormatException();

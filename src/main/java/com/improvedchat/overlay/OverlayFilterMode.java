@@ -1,6 +1,5 @@
 package com.improvedchat.overlay;
 
-/** Content filtering mode for an individual Improved Chat overlay. */
 public enum OverlayFilterMode
 {
     OFF("Off"),

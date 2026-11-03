@@ -60,7 +60,6 @@ import net.runelite.client.config.RequestFocusType;
 import net.runelite.client.config.FlashNotification;
 import net.runelite.client.ui.PluginPanel;
 
-/** Compact side panel for Improved Chat and Overlays. */
 public class ImprovedChatPanel extends PluginPanel {
     private static final Color BG = new Color(31, 34, 39);
     private static final Color CARD = new Color(41, 45, 52);
@@ -212,7 +211,6 @@ public class ImprovedChatPanel extends PluginPanel {
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         root.setBorder(BorderFactory.createEmptyBorder(9, 7, 7, 7));
 
-
         JPanel heading = panel(BG);
         heading.setAlignmentX(Component.LEFT_ALIGNMENT);
         heading.setLayout(new BorderLayout(4, 0));
@@ -234,7 +232,6 @@ public class ImprovedChatPanel extends PluginPanel {
         }
         return root;
     }
-
 
     private Component buildOverlaysPage() {
         WidthTrackingPanel body = verticalPage();
@@ -555,7 +552,6 @@ public class ImprovedChatPanel extends PluginPanel {
         return body;
     }
 
-
     private JPanel notificationControls(OverlayConfig oc) {
         JPanel controls = panel(CARD);
         controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
@@ -824,7 +820,7 @@ public class ImprovedChatPanel extends PluginPanel {
             content.setVisible(next);
             openSections.put(stateKey, next);
             header.setText((next ? "▼  " : "▶  ") + title);
-            // Invalidate the active tab's BoxLayout cache before measuring its new height.
+
             for (java.awt.Container ancestor = root; ancestor != null; ancestor = ancestor.getParent()) {
                 ancestor.invalidate();
                 if (ancestor == ImprovedChatPanel.this) break;
@@ -908,7 +904,6 @@ public class ImprovedChatPanel extends PluginPanel {
         return row;
     }
 
-
     private Component spinnerRow(String name, int value, int min, int max, int step, java.util.function.Consumer<Integer> setter) {
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
         spinner.setPreferredSize(new Dimension(94, 24));
@@ -925,7 +920,6 @@ public class ImprovedChatPanel extends PluginPanel {
         combo.addActionListener(e -> setter.accept((T) combo.getSelectedItem()));
         return controlRow(name, combo);
     }
-
 
     private Component colorRow(String name, Color color, java.util.function.Consumer<Color> setter) {
         JButton swatch = colorButton(color, "");
@@ -1077,12 +1071,11 @@ public class ImprovedChatPanel extends PluginPanel {
 
     private void createOverlay(String name, String template) {
         OverlayConfig oc = OverlayConfig.preset(name, template);
-        oc.getTextSettings(); // New overlays have independent styling defaults.
+        oc.getTextSettings();
         plugin.addConfiguredOverlay(oc);
         sidebarTab = 0;
         openEditor(oc.getId());
     }
-
 
     private JButton colorButton(Color color, String text) {
         Color c = color == null ? Color.WHITE : color;
@@ -1098,7 +1091,6 @@ public class ImprovedChatPanel extends PluginPanel {
         b.setMaximumSize(new Dimension(54, 23));
         return b;
     }
-
 
     private JLabel pageTitle(String title) {
         JLabel l = label("", TEXT, 11, Font.BOLD);
@@ -1321,7 +1313,6 @@ public class ImprovedChatPanel extends PluginPanel {
         return oc.getFadeOutDuration() == 0 ? "No fade" : oc.getFadeOutDuration() + "s fade";
     }
 
-
     private static Color contrast(Color c) {
         int lum = c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114;
         return lum > 150000 ? Color.BLACK : Color.WHITE;
@@ -1343,7 +1334,6 @@ public class ImprovedChatPanel extends PluginPanel {
         }
         return b.toString();
     }
-
 
     private static final class WidthTrackingPanel extends JPanel implements Scrollable {
         @Override public Component add(Component comp) {

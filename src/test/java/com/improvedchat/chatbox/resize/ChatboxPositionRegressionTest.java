@@ -80,7 +80,7 @@ public class ChatboxPositionRegressionTest {
             Object[] args=new Object[constructor.getParameterCount()];
             for(int i=0;i<args.length;i++){
                 Class<?> type=constructor.getParameterTypes()[i];args[i]=dependencies.get(type);
-                // Permit the regression to exercise the old dependency before its removal.
+
                 if(args[i]==null){
                     Constructor<?> managerCtor=OverlayManager.class.getDeclaredConstructors()[0];managerCtor.setAccessible(true);
                     OverlayManager manager=(OverlayManager)managerCtor.newInstance(new Object[managerCtor.getParameterCount()]);
@@ -106,7 +106,7 @@ public class ChatboxPositionRegressionTest {
             for(int login=0;login<4;login++){
                 f.state=GameState.LOGIN_SCREEN;f.widgets.clear();assertNull(f.resizer.apply(false));
                 f.rebuild();f.state=GameState.LOGGED_IN;
-                f.overlay.setPreferredLocation(new Point(180,320)); // Core reloads its saved position.
+                f.overlay.setPreferredLocation(new Point(180,320));
                 f.resizer.apply(false);f.assertLocation();
                 assertEquals(Math.max(0,165+height),f.slot.data.get("Height"));
                 f.resizer.apply(false);f.assertLocation();

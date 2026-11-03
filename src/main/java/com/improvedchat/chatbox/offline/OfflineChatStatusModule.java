@@ -2,20 +2,20 @@
  * Adapted portions from Offline Chat Icon by Bailey Townsend.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2022, Bailey Townsend
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,10 +49,6 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 
-/**
- * Native-chat offline clan presentation. Icon registration/status resolution are shared with
- * Improved Chat overlays through {@link ClanChatPresentationService}.
- */
 @Singleton
 public final class OfflineChatStatusModule
 {
@@ -75,8 +71,6 @@ public final class OfflineChatStatusModule
         started = true;
         eventBus.register(this);
 
-        // ChatIconManager assigns registered icon indices asynchronously. Two deferred passes let
-        // the shared offline marker finish registration before names are rebuilt.
         clientThread.invokeLater(() -> clientThread.invokeLater(this::formatAll));
     }
 
@@ -150,8 +144,6 @@ public final class OfflineChatStatusModule
             changed |= format(message);
         }
 
-        // Do not retain strong references to chat nodes that have left RuneLite's active message
-        // table. This also prevents stale decoration state from surviving longer than the message.
         nameStates.keySet().removeIf(node -> !liveNodes.contains(node));
 
         if (changed)
@@ -174,9 +166,7 @@ public final class OfflineChatStatusModule
         ClanNameState state = nameStates.get(message);
         if (state == null || !state.matches(message))
         {
-            // RuneLite recycles MessageNode objects as the chat buffer advances. A recycled node
-            // must start with the new message's own sender name, never the cached name from the
-            // older message which previously occupied this object.
+
             state = ClanNameState.capture(message);
             nameStates.put(message, state);
         }
@@ -203,8 +193,7 @@ public final class OfflineChatStatusModule
 
     static String offlineName(String base, boolean showIcon, int iconId)
     {
-        // Existing inline colors must not override the offline grey. Keep rank icons and
-        // retain the exact original name in ClanNameState for online/disabled restoration.
+
         String result = "<col=808080>" + base.replaceAll("(?i)</?col(?:=[^>]*)?>", "") + "</col>";
         return showIcon && iconId >= 0 ? "<img=" + iconId + ">" + result : result;
     }
@@ -219,8 +208,6 @@ public final class OfflineChatStatusModule
                 MessageNode node = entry.getKey();
                 ClanNameState state = entry.getValue();
 
-                // Never restore onto a recycled node, and never overwrite a name another plugin
-                // changed after our last decoration pass.
                 if (state.shouldRestore(node))
                 {
                     node.setName(state.getOriginalName());
@@ -229,7 +216,7 @@ public final class OfflineChatStatusModule
             }
             catch (Exception ignored)
             {
-                // Message nodes can expire while the plugin is enabled.
+
             }
         }
 

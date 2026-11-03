@@ -1,6 +1,5 @@
 package com.improvedchat.compat;
 
-/** Snapshot of which native-chat surfaces Modern Chat currently owns. */
 public final class ModernChatOwnership
 {
     private final boolean pluginActive;

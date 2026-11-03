@@ -20,7 +20,6 @@ public class ClanNameStateTest
 
         oldState.recordApplied("<img=12><col=808080>Other Player</col>");
 
-        // RuneLite reuses the same MessageNode object for a new clan line.
         nodeState.id = 201;
         nodeState.timestamp = 5001;
         nodeState.name = "Richard";

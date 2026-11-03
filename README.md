@@ -2,7 +2,7 @@
 
 Give each conversation its own space. Create chat overlays with independent channels, filters, fonts, colours and alerts, including optional RGB text and borders. Resize or collapse the native chatbox, tidy channel labels and menus, distinguish offline clan members, and make dialogue easier to read. Enable only the features you want.
 
-[Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Inspiration and recipe](#inspiration-and-recipe) · [Development](#development) · [Support](#support) · [License and attribution](#license-and-attribution)
+[Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Inspiration and recipe](#inspiration-and-recipe) · [Support](#support) · [License and attribution](#license-and-attribution)
 
 ## Features
 
@@ -21,8 +21,6 @@ Give each conversation its own space. Create chat overlays with independent chan
 - **Chatbox opacity controls** for the native chatbox, buttons, dialogue, and menus.
 - **Dialogue text styling** for NPC, player, option-menu, and item/action dialogue.
 - **Compatibility safeguards** for RuneLite Chat Color, Chat Filter, Emojis, Resource Packs, and Modern Chat.
-
-**Availability:** Install **Improved Chat and Overlays** from RuneLite's Plugin Hub. Experimental overlay effects and message replacement are marked **Beta** in their settings.
 
 **Regular chatbox border:** open the plugin settings → **Chatbox** → **Chatbox border**. It starts off. Choose a solid color and opacity, thickness, optional RGB with cycle speed, and rounded corners. The frame follows the visible native chat area in fixed and resizable layouts, including chat resizing; it disappears when chat is collapsed, hidden or replaced by a dialogue. Rounded corners clip the native background to the same curve as the solid or RGB frame, preserving its color, texture and opacity. Custom overlay borders remain independent.
 
@@ -389,10 +387,6 @@ The recipe is movable chat widgets, a flexible native chatbox and clear message 
 | [Modern Chat](https://github.com/BenDol/Modern-Chat) | Alternative chat experience | A different chat redesign. Our compatibility guards yield conflicting native-chat features; unrelated overlays can remain active. |
 
 These connections describe specific features, not a promise that every option is duplicated or every combination is interchangeable. Original copyright and license text is retained separately in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and packaged license files.
-
-## Development
-
-Use Java 11 and the repository's Gradle wrapper. Run `./gradlew test build` (Windows: `gradlew.bat test build`). Release commits are selected explicitly in the Plugin Hub manifest; the default branch and the Hub build can differ.
 
 ## Support
 

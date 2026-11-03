@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import net.runelite.api.widgets.Widget;
@@ -36,15 +36,10 @@ import net.runelite.client.game.chatbox.ChatboxTextInput;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-// RuneLite's own chatbox prompts (quest search, bank tag name, item search) bake their value and caret into
-// ABSOLUTE children centered by hand at build time, so a later width change leaves them off to one side of the
-// box. Rather than chase every resize path, watch the prompt container and re-bake whenever its width moves.
 @Singleton
 public final class RuneLiteChatInput {
     private final ChatboxPanelManager panels;
 
-    // The input the width below was measured for; identity also stops a reused input
-    // singleton (ChatboxItemSearch) from carrying a previous session's width into a fresh one
     private ChatboxInput lastInput;
     private int lastWidth;
 
@@ -53,26 +48,24 @@ public final class RuneLiteChatInput {
         this.panels = panels;
     }
 
-    // Client thread. Idle cost is a field read; only a live text prompt gets as far as the widget lookup.
     void refit() {
         ChatboxInput input = panels.getCurrentInput();
-        if (!(input instanceof ChatboxTextInput)) { // ChatboxTextMenuInput self-centers, so it needs nothing
+        if (!(input instanceof ChatboxTextInput)) {
             lastInput = null;
             return;
         }
 
         ChatboxTextInput text = (ChatboxTextInput) input;
-        if (!text.isBuilt()) return; // Opened but not drawn yet; its own build will use the current width
+        if (!text.isBuilt()) return;
 
         Widget container = panels.getContainerWidget();
-        if (container == null) return; // Chatbox gone (hop, relog, layout swap): keep the tracking for when it's back
+        if (container == null) return;
 
         int width = container.getWidth();
         boolean moved = input == lastInput && width != lastWidth;
         lastInput = input;
         lastWidth = width;
 
-        // Handing cursorAt() back the caret it already holds makes it a pure rebuild at the current width
         if (moved) text.cursorAt(text.getCursorStart(), text.getCursorEnd());
     }
 }

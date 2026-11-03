@@ -6,7 +6,6 @@ import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/** Bounds user expressions without leaving timed-out work running on a background thread. */
 public final class BoundedPattern
 {
     public static final int MAX_SOURCE = 32768;
@@ -55,7 +54,7 @@ public final class BoundedPattern
         }
         catch (LimitReached | StackOverflowError ex)
         {
-            // A pathological expression must not repeatedly stall client/render callbacks.
+
             DISABLED.put(pattern, Boolean.TRUE);
             limited = true;
             return false;

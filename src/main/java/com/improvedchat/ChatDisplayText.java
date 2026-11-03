@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.runelite.api.ChatMessageType;
 
-/** Display-only interpretation of native chat payloads; never changes outgoing input. */
 public final class ChatDisplayText {
     private static final Pattern TEMPLATE = Pattern.compile("<(str_[A-Za-z0-9_]+)(?:=([^<>]*))?>");
 

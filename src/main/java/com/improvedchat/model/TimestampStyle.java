@@ -1,6 +1,5 @@
 package com.improvedchat.model;
 
-/** How an overlay labels a message's arrival time. */
 public enum TimestampStyle {
     CLOCK_TIME("Clock time"),
     TIME_AGO("Time ago (20m)");

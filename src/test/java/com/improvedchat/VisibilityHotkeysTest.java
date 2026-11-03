@@ -33,7 +33,7 @@ public class VisibilityHotkeysTest {
         assertTrue(calls.get(0).hideChatbox);
         keys.keyReleased(event(KeyEvent.KEY_RELEASED)); keys.keyPressed(event(KeyEvent.KEY_PRESSED));
         assertEquals(2,calls.size());
-        // Saving the toggled Enabled state must not discard the second queued press.
+
         a.setShow(false); keys.configure(Arrays.asList(a,b,other),KEY);
         assertTrue(keys.isCurrent(calls.get(1)));
     }

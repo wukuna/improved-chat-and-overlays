@@ -70,7 +70,7 @@ public class OverlayPaddingTest {
             assertEquals(size + " Each row must retain the entire glyph", single * 3, textPixels(three.image));
             f.config.setDynamicHeight(false);
             f.config.setMaxMessages(1);
-            // A wrapped message must show its complete last row, without remnants of the previous row.
+
             assertEquals(single, textPixels(f.render("HÉgjpqy<br>HÉgjpqy<br>HÉgjpqy").image));
             f.config.setDynamicHeight(true);
         }

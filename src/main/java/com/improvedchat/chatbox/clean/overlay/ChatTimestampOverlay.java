@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -102,7 +102,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 
 					if (isChatboxTransparent)
 					{
-						// Draw shadow
+
 						graphics.setColor(Color.BLACK);
 						graphics.drawString(str, timestampX.get() + 1, timestampY + 1);
 						graphics.setColor(timestampColor);
@@ -111,9 +111,6 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 					timestampX.addAndGet(cellWidth);
 				}
 
-				// Keep every token at its maximum reserved width. A one-digit H/M/d token
-				// therefore occupies the same slot as its two-digit form, so separators and all
-				// following chat widgets stay at one deterministic X position.
 				int reservedChars = segment.endIndex - segment.startIndex;
 				int remainingCells = Math.max(0, reservedChars - value.length());
 				timestampX.addAndGet(remainingCells * cellWidth);
@@ -124,7 +121,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 			{
 				if (isChatboxTransparent)
 				{
-					// Draw shadow
+
 					graphics.setColor(Color.BLACK);
 					graphics.drawString(text, timestampX.get() + 1, timestampY + 1);
 					graphics.setColor(timestampColor);
@@ -175,9 +172,6 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 				}
 			});
 
-			// Native chat spacing is three pixels wide. Align the reserved timestamp slot to
-			// that grid so the hidden timestamp replacement and every downstream layout
-			// calculation use the exact same pixel width.
 			int spaceWidth = Math.max(1, getTextLength(" ", client));
 			int rawWidth = plugin.getTimestampTemplateWidth();
 			plugin.setTimestampTemplateWidth(((rawWidth + spaceWidth - 1) / spaceWidth) * spaceWidth);
@@ -185,7 +179,6 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 
 		client.refreshChat();
 	}
-
 
 	private static int cellWidth(FormatterExtractor.FormatSegment segment)
 	{

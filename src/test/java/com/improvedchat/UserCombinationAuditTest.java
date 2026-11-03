@@ -12,7 +12,7 @@ public class UserCombinationAuditTest {
  static void set(Object o,Class<?> c,String name,Object v)throws Exception{Field f=c.getDeclaredField(name);f.setAccessible(true);f.set(o,v);}
  static Object def(Class<?> c){if(c==boolean.class)return false;if(c==int.class)return 0;if(c==long.class)return 0L;return null;}
  @SuppressWarnings("unchecked") @Test public void filtersAlertsAndHistoryExhaustiveStates()throws Exception{
-  P p=new P();boolean[] global={false,false,true,true}; // duplicate collapse, global filter, color rules, player rules
+  P p=new P();boolean[] global={false,false,true,true};
   ImprovedChatConfig c=new ImprovedChatConfig(){@Override public boolean collapseDuplicates(){return global[0];}@Override public boolean useChatFilter(){return global[1];}@Override public boolean enableMessageColorRules(){return global[2];}@Override public boolean includePlayerChatInColorRules(){return global[3];}@Override public String messageColorRules(){return "hello::1::flash";}};
   set(p,ImprovedChatPlugin.class,"config",c);GameState[] state={GameState.LOGGED_IN};
   Client client=(Client)Proxy.newProxyInstance(Client.class.getClassLoader(),new Class[]{Client.class},(o,m,a)->m.getName().equals("getGameState")?state[0]:def(m.getReturnType()));set(p,ImprovedChatPlugin.class,"client",client);

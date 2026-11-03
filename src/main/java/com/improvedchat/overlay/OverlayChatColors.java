@@ -7,7 +7,6 @@ import net.runelite.api.Client;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ChatColorConfig;
 
-/** Read-only access to RuneLite's selected chat palette. */
 final class OverlayChatColors {
     private OverlayChatColors() { }
 

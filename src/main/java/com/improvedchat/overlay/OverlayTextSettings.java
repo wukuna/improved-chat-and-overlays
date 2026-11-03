@@ -6,7 +6,6 @@ import com.improvedchat.RainbowStyle;
 import com.improvedchat.model.AnimatedTextStyle;
 import java.awt.Color;
 
-/** Per-overlay snapshot of the former global color settings. Never registered with ConfigManager. */
 public final class OverlayTextSettings implements ImprovedChatConfig {
     private static final Color[] DEFAULT_PALETTE = {new Color(239,16,32), new Color(255,149,0), new Color(255,214,10), new Color(52,199,89), new Color(50,215,255), new Color(10,132,255), new Color(94,92,230), new Color(191,90,242), Color.WHITE};
     private static final Color[] DEFAULT_CHANNEL_COLORS = {Color.WHITE, new Color(148,148,255), Color.CYAN, new Color(239,80,80), new Color(127,0,0), new Color(0,211,0), new Color(127,0,0), new Color(223,32,255), new Color(255,32,223), Color.YELLOW, Color.WHITE, new Color(64,64,255)};
@@ -31,7 +30,7 @@ public final class OverlayTextSettings implements ImprovedChatConfig {
         result.rainbowRules = old.overlayRainbowRules();
         result.spread = old.rainbowStyle();
         result.source = old.chatColorSource();
-        // Old animation/solid overrides took precedence over rules; preserve that on migration.
+
         result.highlightsOverrideDefaults = false;
         result.palette = new Color[] {old.messageRuleColor1(), old.messageRuleColor2(), old.messageRuleColor3(), old.messageRuleColor4(), old.messageRuleColor5(), old.messageRuleColor6(), old.messageRuleColor7(), old.messageRuleColor8(), old.messageRuleColor9()};
         result.channelColors = new Color[] {old.gameColour(), old.publicColour(), old.privateColour(), old.friendsColour(), old.clanColour(), old.guestClanColour(), old.gimClanColour(), old.tradeColour(), old.challengeColour(), old.didYouKnowColour(), old.broadcastColour(), old.autoColour()};

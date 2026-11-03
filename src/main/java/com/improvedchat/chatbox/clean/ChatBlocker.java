@@ -57,7 +57,6 @@ public class ChatBlocker
 	@Subscribe
 	public void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
-		// Yoinked from core RL
 
 		if (!"chatFilterCheck".equals(event.getEventName()))
 		{
@@ -76,8 +75,6 @@ public class ChatBlocker
 		final MessageNode messageNode = client.getMessages().get(messageId);
 		final String channelText = messageNode.getSender();
 
-		// end core RL
-
 		ChatTab selectedChatTab = ChatTab.of(client.getVarcIntValue(VarClientID.CHAT_VIEW));
 
 		boolean blockChat = Stream.of(ChatBlock.values()).anyMatch(block -> block.appliesTo(config, message));
@@ -94,8 +91,6 @@ public class ChatBlocker
 			blockChat = channel.isTabBlocked(config, selectedChatTab);
 		}
 
-		// Totally bizarre situation where after hopping the clan instruction becomes the name and the previous 'did you know?' becomes the message
-		//  channel=nothing, name=clan instruction, message=did you know? ...
 		if (!blockChat && ChatBlock.CLAN_INSTRUCTION.appliesTo(config, channelText))
 		{
 			blockChat = true;

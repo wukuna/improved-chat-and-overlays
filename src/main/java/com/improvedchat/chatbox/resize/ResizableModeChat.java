@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -56,12 +56,12 @@ public class ResizableModeChat {
     private final TopLevelModals mainModals;
     private final RuneLiteHudAnchors hudAnchors;
 
-    private int lastOpenTab; // Tab open before the chat was hidden, reopened on unhide
-    private boolean lastCollapsed; // Collapse state the last apply() sized the slot to
-    private boolean relayoutNeeded; // Chat dimensions changed and surrounding interfaces need a fresh fit
+    private int lastOpenTab;
+    private boolean lastCollapsed;
+    private boolean relayoutNeeded;
     private boolean enablePending;
     private int lastAppliedWidth = -1;
-    private int lastAppliedHeight = -1; // onEnable ran before the layout swap handed the chatbox over
+    private int lastAppliedHeight = -1;
 
     @Inject
     ResizableModeChat(
@@ -80,32 +80,29 @@ public class ResizableModeChat {
         this.hudAnchors = hudAnchors;
     }
 
-    // Adopt the chat size, then re-fit and re-wrap; rebuilding mid-swap would blacken a transparent chat
     void onEnable() {
         if (apply(swapSize.effectiveHeightChange() == 0 && swapSize.effectiveWidthChange() == 0) == null) {
-            enablePending = true; // Mid-swap; retry on a later frame, once the slot is ours
+            enablePending = true;
         } else {
-            ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Re-fits an already-open dialog group too, not just the text
+            ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
             mainModals.relayout();
-            consumeRelayoutNeeded(); // onEnable handled the fresh interface band immediately
+            consumeRelayoutNeeded();
         }
     }
 
-    // True once when an onEnable bailed mid-swap and still owes its rebuild
     boolean consumeEnablePending() {
         boolean pending = enablePending;
         enablePending = false;
         return pending;
     }
 
-    // Apply resizes in resizable layout; returns the applied slot size, or null if widgets missing/mid-swap
     Dimension apply(boolean force) {
         Widget universe = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (universe == null) return null;
         Widget chatArea = client.getWidget(InterfaceID.Chatbox.CHATAREA);
         if (chatArea == null) return null;
-        Widget slot = universe.getParent(); // Should be InterfaceID.ToplevelPreEoc.CHAT_CONTAINER
-        if (slot == null || slot.getId() == InterfaceID.Toplevel.CHAT_CONTAINER) return null; // Not loaded or mid-swap
+        Widget slot = universe.getParent();
+        if (slot == null || slot.getId() == InterfaceID.Toplevel.CHAT_CONTAINER) return null;
 
         boolean dialogOpen = dialogBoxes.isDialogOpen();
         int widthChange = SizeClamps.clamp(swapSize.effectiveWidthChange(), false, false, dialogOpen, config);
@@ -113,70 +110,63 @@ public class ResizableModeChat {
 
         int openTab = client.getVarcIntValue(VarClientID.CHAT_VIEW);
         boolean collapsed = openTab == RawScripts.COLLAPSED_TAB;
-        if (!collapsed) lastOpenTab = openTab; // Tracked live, so an unhide reopens the tab whichever way the hide happened
+        if (!collapsed) lastOpenTab = openTab;
         if (collapsed != lastCollapsed) {
             lastCollapsed = collapsed;
-            relayoutNeeded = true; // Everything reserving against the chat slot has to re-fit to the new band
+            relayoutNeeded = true;
         }
 
         int slotW = ChatGeometry.CHATBOX_SPRITE_W + widthChange;
-        // Bottomed at 0: the height floor runs the slot out entirely, background first, then the tab bar
+
         int slotH = Math.max(0, ChatGeometry.CHATBOX_SLOT_H + heightChange);
         int backgroundH = Math.max(0, ChatGeometry.CHATBOX_SPRITE_H + heightChange);
 
-        // Do not rely on a collapse, canvas resize, or unrelated toplevel script to wake mounted interfaces.
-        // Any real chat dimension change alters the usable layout envelope and must trigger one fresh refit.
         if (slotW != lastAppliedWidth || slotH != lastAppliedHeight) {
             lastAppliedWidth = slotW;
             lastAppliedHeight = slotH;
             relayoutNeeded = true;
         }
 
-        hudAnchors.sync(heightChange); // Vertically shift RuneLite's HUD anchors
+        hudAnchors.sync(heightChange);
         if (hudAnchors.consumeLayoutChanged()) {
-            relayoutNeeded = true; // Child modal slots changed height; re-run the toplevel fit once settled
+            relayoutNeeded = true;
         }
-        // RuneLite owns the chat overlay position and bounds. Never shift its saved location
-        // to compensate for size changes: that point is reloaded independently at login.
 
         if (!force &&
             slot.getWidth() == slotW && slot.getHeight() == slotH &&
             universe.getWidth() == slotW && universe.getHeight() == slotH &&
             chatArea.getWidth() == slotW &&
             bgGraphic.tabBarMatches(widthChange)
-        ) { // Short-circuit but still make some assurances
+        ) {
             bgGraphic.resizeTabBar(widthChange);
             bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
             if (dialogOpen) dialogBoxes.centerDialogs();
-            bgGraphic.syncBorder(chatArea, false, dialogOpen); // Recreate if dropped, else re-sync visibility
+            bgGraphic.syncBorder(chatArea, false, dialogOpen);
             pmSplit.resizePmBox(slotW);
             sizeHpBarBand(slotH);
             return new Dimension(slotW, slotH);
         }
 
-        // Resize the toplevel chat slot, propagates to message layer and CHATAREA's height
         slot.setSize(slotW, slotH);
         slot.revalidate();
 
-        // Universe's minus fill resolves against client root, pin as absolute
         universe.setSize(slotW, slotH, WidgetSizeMode.ABSOLUTE, WidgetSizeMode.ABSOLUTE);
         universe.setForcedPosition(0, 0);
         universe.revalidate();
 
-        chatArea.setOriginalWidth(slotW); // Chat area's width is absolute, does not follow universe
+        chatArea.setOriginalWidth(slotW);
 
-        bgGraphic.resizeTabBar(widthChange); // Must resize before cascading revalidate
+        bgGraphic.resizeTabBar(widthChange);
         Widgets.revalidateChildren(universe);
         bgGraphic.syncBorder(chatArea, true, dialogOpen);
         bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
-        if (dialogOpen) dialogBoxes.centerDialogs(); // Mounted dialog groups need placing by hand
+        if (dialogOpen) dialogBoxes.centerDialogs();
         pmSplit.resizePmBox(slotW);
         sizeHpBarBand(slotH);
 
         return new Dimension(slotW, slotH);
     }
 
-    // Revert the resizes; the collapse itself is engine-owned state, so leave it alone and just drop our tracking
     void restore() {
         lastCollapsed = false;
         relayoutNeeded = false;
@@ -187,11 +177,10 @@ public class ResizableModeChat {
         Widget universe = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (universe == null) return;
 
-        // Don't touch the fixed slot from the resizable path
         Widget slot = universe.getParent();
         if (slot != null && slot.getId() != InterfaceID.Toplevel.CHAT_CONTAINER) {
             slot.setSize(ChatGeometry.CHATBOX_SPRITE_W, ChatGeometry.CHATBOX_SLOT_H);
-            // Keep the slot position owned by RuneLite's movement overlay.
+
             slot.revalidate();
         }
 
@@ -206,53 +195,44 @@ public class ResizableModeChat {
         bgGraphic.destroyBorder();
         pmSplit.restorePmBox();
         Widgets.revalidateChildren(universe);
-        bgGraphic.revertBackground(); // After the cascade, so the container resolves against a settled chat area
+        bgGraphic.revertBackground();
         dialogBoxes.resetDialogPositions();
         hudAnchors.restore();
-        hudAnchors.consumeLayoutChanged(); // shutdown/layout-swap caller performs its own stock relayout
+        hudAnchors.consumeLayoutChanged();
 
-        // Only the literal height was overridden, so a plain revalidate recomputes the stock MINUS reserve
         Widget dodger = client.getWidget(InterfaceID.HpbarHud.HPDODGER);
         if (dodger != null) dodger.revalidate();
     }
 
-    // The chat rebuild re-cuts a transparent chat's gradient off the height it reads going in, so re-assert after it
     void restoreBackground() {
         bgGraphic.revertBackground();
     }
 
-    // Hide/unhide via the native tab collapse. Clicking the active tab is what collapses, so hide by clicking whichever
-    // tab is up and unhide by clicking the remembered one; a stale index on a showing chat would just switch tabs.
     void toggleHidden() {
         int tab = client.getVarcIntValue(VarClientID.CHAT_VIEW);
         client.runScript(RawScripts.CHAT_TAB_CLICKED, 1, tab == RawScripts.COLLAPSED_TAB ? lastOpenTab : tab);
     }
 
-    // RuneLite clamps the native boss health bar to this widget, whose bottom edge is otherwise the stock chat top
     private void sizeHpBarBand(int slotH) {
         Widget dodger = client.getWidget(InterfaceID.HpbarHud.HPDODGER);
-        if (dodger == null) return; // No health bar on screen, group isn't mounted
+        if (dodger == null) return;
         Widget root = dodger.getParent();
         if (root == null) return;
 
-        int h = Math.max(0, root.getHeight() - slotH - dodger.getRelativeY()); // Bottom edge lands on the chat top
+        int h = Math.max(0, root.getHeight() - slotH - dodger.getRelativeY());
         if (dodger.getHeight() != h) Widgets.setHeight(dodger, h);
     }
 
-    // True once when collapsing/uncollapsing has changed the band above the chat
     boolean consumeRelayoutNeeded() {
         boolean needed = relayoutNeeded;
         relayoutNeeded = false;
         return needed;
     }
 
-    // True while the engine's native tab collapse has the chat hidden
     boolean isCollapsed() {
         return client.getVarcIntValue(VarClientID.CHAT_VIEW) == RawScripts.COLLAPSED_TAB;
     }
 
-    // Height change before dialog adjustments: the min keeps a collapse a shrink, and a dialog drops
-    // that shrink alone while the collapse itself stands (FixedModeChat has the twin of this)
     int effectiveHeightChange(boolean dialogOpen) {
         int configured = swapSize.effectiveHeightChange();
         return isCollapsed() && !dialogOpen ? Math.min(-ChatGeometry.CHATBOX_SPRITE_H, configured) : configured;

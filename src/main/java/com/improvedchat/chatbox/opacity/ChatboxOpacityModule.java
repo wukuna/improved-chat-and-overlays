@@ -2,20 +2,20 @@
  * Adapted portions from ChatboxOpacity by Trevor.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2019, Trevor
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,9 +46,6 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 
-/**
- * Improved Chat native chatbox opacity handling for transparent resizable chat.
- */
 @Singleton
 public final class ChatboxOpacityModule {
     private static final int CHATBOX_GROUP_ID = 162;
@@ -128,9 +125,7 @@ public final class ChatboxOpacityModule {
         Widget background = client.getWidget(net.runelite.api.gameval.InterfaceID.Chatbox.CHAT_BACKGROUND);
         Widget[] children = background == null ? null : background.getDynamicChildren();
         if (children != null) {
-            // Transparent chat normally uses rectangle/gradient children. Dialogue and option menus
-            // temporarily replace that surface with the opaque parchment graphic even while the
-            // transparent-chat varbit remains enabled. Allow users to keep those surfaces native.
+
             if (!config.opacityDialogueMenus() && isDialogueOrMenuSurface(children)) {
                 restoreBackground();
             } else {
@@ -166,7 +161,7 @@ public final class ChatboxOpacityModule {
             restoreButton();
         } else {
             if (ownedButton != button || appliedButton == null || !appliedButton.matches(button)) {
-                // Release only values we still own before capturing a fresh widget/style.
+
                 restoreButton();
                 ownedButton = button;
                 originalButton = new ButtonStyle(button);
@@ -211,8 +206,7 @@ public final class ChatboxOpacityModule {
 
     private void restoreButton() {
         if (ownedButton != null && originalButton != null && appliedButton != null) {
-            // A native rebuild or another plugin can change individual properties.
-            // Never write an old widget's snapshot onto its replacement.
+
             if (ownedButton.getSpriteId() == appliedButton.sprite) ownedButton.setSpriteId(originalButton.sprite);
             if (ownedButton.getOpacity() == appliedButton.opacity) ownedButton.setOpacity(originalButton.opacity);
             if (ownedButton.isFilled() == appliedButton.filled) ownedButton.setFilled(originalButton.filled);

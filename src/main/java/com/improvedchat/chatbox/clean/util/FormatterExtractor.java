@@ -2,19 +2,19 @@
  * Adapted portions from Clean Chat by ldavid432.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, ldavid432
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,35 +41,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FormatterExtractor {
 
-	/**
-	 * Represents a segment of the formatted output and its source format token
-	 */
 	@Value
 	public static class FormatSegment
 	{
-		public String token;      // The format token (e.g., "yyyy", "MM", "dd")
-		public char tokenChar;    // The token character (e.g., 'y', 'M', 'd')
-		public int tokenCount;    // The number of repetitions (e.g., 4 for "yyyy")
-		public int startIndex;    // Start position in the output string
-		public int endIndex;      // End position in the output string (exclusive)
-		public String value;      // Placeholder value until matched against actual output
+		public String token;
+		public char tokenChar;
+		public int tokenCount;
+		public int startIndex;
+		public int endIndex;
+		public String value;
 	}
 
-	/**
-	 * Result containing the formatted output structure and segment information
-	 */
 	@Value
 	public static class ExtractionResult
 	{
-		String formattedOutput;  // The template output with placeholders
+		String formattedOutput;
 		List<FormatSegment> segments;
 		String remainingText;
 	}
 
-	/**
-	 * Create an ExtractionResult from just the format string.
-	 * This expands format characters to their maximum sizes and creates the template.
-	 */
 	public static ExtractionResult createFromFormatString(String formatString)
 	{
 		if (!SimpleDateFormatUtil.isValidPattern(formatString)) {
@@ -85,7 +75,6 @@ public class FormatterExtractor {
 		{
 			char c = formatString.charAt(i);
 
-			// Handle quoted literals
 			if (c == '\'')
 			{
 				i++;
@@ -95,14 +84,13 @@ public class FormatterExtractor {
 					currentPos++;
 					i++;
 				}
-				i++; // Skip closing quote
+				i++;
 				continue;
 			}
 
-			// Check if this is a format character
 			if (isFormatChar(c))
 			{
-				// Count consecutive identical format characters
+
 				int count = 1;
 				while (i + count < formatString.length() && formatString.charAt(i + count) == c)
 				{
@@ -112,7 +100,6 @@ public class FormatterExtractor {
 				String token = String.valueOf(c).repeat(count);
 				int expandedSize = getExpandedSize(c, count);
 
-				// Create placeholder in template (spaces for now)
 				String placeholder = " ".repeat(expandedSize);
 				int startIndex = currentPos;
 				int endIndex = currentPos + expandedSize;
@@ -125,7 +112,7 @@ public class FormatterExtractor {
 			}
 			else
 			{
-				// This is a literal character, not a format token
+
 				templateOutput.append(c);
 				currentPos++;
 				i++;
@@ -135,14 +122,9 @@ public class FormatterExtractor {
 		return new ExtractionResult(templateOutput.toString(), segments, "");
 	}
 
-	/**
-	 * Extract the actual formatted output from text using the ExtractionResult template,
-	 * and populate the segment values.
-	 * This version handles color formatting tags like <col=000000>text</col>
-	 */
 	public static ExtractionResult extractFromText(ExtractionResult template, String text)
 	{
-		// Remove color formatting tags for matching purposes
+
 		String cleanedText = removeColorTags(text);
 
 		String regex = formatToRegexFromSegments(template.segments, template.formattedOutput);
@@ -155,10 +137,8 @@ public class FormatterExtractor {
 			String formattedOutput = matcher.group(0);
 			int matchedLength = formattedOutput.length();
 
-			// Find where the match ends in the original text (accounting for tags)
 			int originalEndPos = findOriginalPosition(text, matchedLength);
 
-			// Ensure we don't go past the end of the string
 			if (originalEndPos > text.length())
 			{
 				originalEndPos = text.length();
@@ -167,10 +147,6 @@ public class FormatterExtractor {
 			String remainingText = originalEndPos < text.length() ?
 				text.substring(originalEndPos) : "";
 
-			// Populate segment values from the regex capture groups instead of slicing by the
-			// template's maximum-width positions. Variable-width tokens such as H, M, d, or E can
-			// produce fewer characters than their reserved template width; slicing by template
-			// offsets causes separators/neighboring tokens to leak into the value.
 			List<FormatSegment> populatedSegments = new ArrayList<>();
 			for (int i = 0; i < template.segments.size(); i++)
 			{
@@ -186,9 +162,6 @@ public class FormatterExtractor {
 		return null;
 	}
 
-	/**
-	 * Find the position in the original text corresponding to a cleaned text position
-	 */
 	private static int findOriginalPosition(String originalText, int cleanedPosition)
 	{
 		int cleanedCount = 0;
@@ -196,10 +169,10 @@ public class FormatterExtractor {
 
 		while (originalPos < originalText.length() && cleanedCount < cleanedPosition)
 		{
-			// Check if we're at the start of a color tag
+
 			if (originalText.startsWith("<col=", originalPos))
 			{
-				// Skip the opening tag
+
 				int closeTag = originalText.indexOf(">", originalPos);
 				if (closeTag != -1)
 				{
@@ -208,14 +181,12 @@ public class FormatterExtractor {
 				}
 			}
 
-			// Check if we're at a closing tag
 			if (originalText.startsWith("</col>", originalPos))
 			{
 				originalPos += 6;
 				continue;
 			}
 
-			// Regular character
 			cleanedCount++;
 			originalPos++;
 		}
@@ -223,18 +194,12 @@ public class FormatterExtractor {
 		return originalPos;
 	}
 
-	/**
-	 * Remove color formatting tags like <col=000000>text</col> from the text
-	 */
 	private static String removeColorTags(String text)
 	{
-		// Pattern to match <col=XXXXXX> and </col> tags
+
 		return text.replaceAll("<col=[0-9a-fA-F]{6,8}>|</col>", "");
 	}
 
-	/**
-	 * Build regex from the segment list and the template (for extracting from actual text)
-	 */
 	private static String formatToRegexFromSegments(List<FormatSegment> segments, String template)
 	{
 		StringBuilder regex = new StringBuilder();
@@ -242,21 +207,19 @@ public class FormatterExtractor {
 
 		for (FormatSegment seg : segments)
 		{
-			// Add any literal text before this segment
+
 			if (templatePos < seg.startIndex)
 			{
 				String literal = template.substring(templatePos, seg.startIndex);
 				regex.append(Pattern.quote(literal));
 			}
 
-			// Add the regex pattern for this segment
 			String regexPart = formatTokenToRegex(seg.tokenChar, seg.tokenCount);
 			regex.append("(").append(regexPart).append(")");
 
 			templatePos = seg.endIndex;
 		}
 
-		// Add any remaining literal text after the last segment
 		if (templatePos < template.length())
 		{
 			String literal = template.substring(templatePos);
@@ -266,9 +229,6 @@ public class FormatterExtractor {
 		return regex.toString();
 	}
 
-	/**
-	 * Callback interface for processing each part of the output
-	 */
 	public interface OutputPartConsumer
 	{
 		void consumeSegment(FormatSegment segment);
@@ -276,10 +236,6 @@ public class FormatterExtractor {
 		void consumeText(String text, int startIndex, int endIndex);
 	}
 
-	/**
-	 * Iterate through the formatted output, calling the consumer for each segment
-	 * (format token) or literal text portion.
-	 */
 	public static void iterateOutputParts(ExtractionResult result, OutputPartConsumer consumer)
 	{
 		List<FormatSegment> segments = result.segments;
@@ -290,7 +246,6 @@ public class FormatterExtractor {
 		for (FormatSegment segment : segments)
 		{
 
-			// If there's text before this segment, process it as literal text
 			if (currentPos < segment.startIndex)
 			{
 				String literalText = output.substring(currentPos, segment.startIndex);
@@ -298,12 +253,10 @@ public class FormatterExtractor {
 				currentPos = segment.startIndex;
 			}
 
-			// Process the segment
 			consumer.consumeSegment(segment);
 			currentPos = segment.endIndex;
 		}
 
-		// Process any remaining text after the last segment
 		if (currentPos < output.length())
 		{
 			String remainingText = output.substring(currentPos);

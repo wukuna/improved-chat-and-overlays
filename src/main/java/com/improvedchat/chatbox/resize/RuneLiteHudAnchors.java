@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -51,27 +51,23 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-// Resizable-only. Resizes RuneLite's HUD container so its child interface band (bank, settings, etc.)
-// tracks the adjusted chat, while freezing the bottom-right snap corner that reads the same container.
 @Singleton
 public final class RuneLiteHudAnchors {
     private final Client client;
     private final ImprovedChatConfig config;
     private final ConfigManager configManager;
 
-    // Native MINUS reserve of each HUD container, captured once before we first override it
     private final Map<Integer, Integer> stockReserve = new HashMap<>();
 
     private boolean applied;
-    private boolean swapped; // A snap-corner read is currently seeing a fake stock height, to be restored after
-    private int swappedHudId = -1; // Restore the exact HUD temporarily presented, even if the layout flips mid-frame
-    private boolean layoutChanged; // HUD reserve changed; mounted interfaces need one fresh toplevel re-fit
+    private boolean swapped;
+    private int swappedHudId = -1;
+    private boolean layoutChanged;
     private Widget lastLayoutHud;
     private int lastLayoutReserve = -1;
 
-    // Hold that fake height in place for as long as a snap corner can be dragged against it
-    private boolean dragHotkeyHeld; // RuneLite's hotkey for moving HUD items and HUD snap anchors
-    private RuneLiteConfig runeLiteConfig; // RuneLite core config holding that hotkey
+    private boolean dragHotkeyHeld;
+    private RuneLiteConfig runeLiteConfig;
 
     final HotkeyListener dragHotkeyListener = new HotkeyListener(this::runeLiteDragHotkey) {
         @Override public void hotkeyPressed() { dragHotkeyHeld = true; }
@@ -80,8 +76,6 @@ public final class RuneLiteHudAnchors {
 
     final BeforeDrawRestore beforeDrawRestore = new BeforeDrawRestore();
 
-    // RuneLite reads the container again when it draws the snap corners' drag indicators, in an
-    // overlay pass that runs after the widgets: present the same stock height across that pass.
     final Overlay indicatorPresent = new HeightSlice(this::presentAnchorHeight, OverlayPosition.DYNAMIC);
     final Overlay indicatorRestore = new HeightSlice(this::restoreLayoutHeight, OverlayPosition.TOP_LEFT);
 
@@ -92,21 +86,18 @@ public final class RuneLiteHudAnchors {
         this.configManager = configManager;
     }
 
-    // RuneLite's overlay drag hotkey, whatever the user has it set to (its config is fetched once and cached)
     private Keybind runeLiteDragHotkey() {
         if (runeLiteConfig == null) runeLiteConfig = configManager.getConfig(RuneLiteConfig.class);
         return runeLiteConfig.dragHotkey();
     }
 
-    // Resize the HUD container so its child interface band tracks the chat. Safe and self-healing.
     void sync(int chatHeightDelta) {
-        // Grow off but a grown chat won't ungrow for interfaces: still shrink the band, or it overlaps them
+
         if (!config.growInterfaces() && !(chatHeightDelta > 0 && !config.revertForModals().ungrows())) {
-            if (applied) restore(); // Off with nothing forced: revert override once, then leave the HUD alone
+            if (applied) restore();
             return;
         }
 
-        // Grow off: keep only the shrink half of the delta, so a shorter chat never grows the band
         int delta = config.growInterfaces() ? chatHeightDelta : Math.max(0, chatHeightDelta);
 
         int id = activeFrontId();
@@ -115,9 +106,7 @@ public final class RuneLiteHudAnchors {
 
         int base = stockReserve.computeIfAbsent(id, k -> hud.getOriginalHeight());
         int target = Math.max(0, base + delta);
-        // The native toplevel-resize script restores its stock reserve. Repair that drift,
-        // but only a new target (or recreated HUD) needs another complete interface refit.
-        // Treating every repair as a resize makes our own refit queue itself every frame.
+
         if (hud != lastLayoutHud || target != lastLayoutReserve) {
             lastLayoutHud = hud;
             lastLayoutReserve = target;
@@ -126,57 +115,49 @@ public final class RuneLiteHudAnchors {
         if (hud.getOriginalHeight() != target) {
             hud.setOriginalHeight(target);
             hud.revalidate();
-            // A plain parent revalidate updates the HUD itself but can leave its child modal slots
-            // at their previous height until some unrelated toplevel layout event occurs.
+
             Widgets.revalidateChildren(hud);
         }
 
         applied = true;
     }
 
-    // True once after the usable interface band changed. Consumers re-fit mounted windows exactly once.
     boolean consumeLayoutChanged() {
         boolean changed = layoutChanged;
         layoutChanged = false;
         return changed;
     }
 
-    // Freeze the bottom-right snap corner: present the stock rendered height for both reads that place
-    // it; OverlayRenderer's default-priority BeforeRender, then its indicator draw. Resizable only.
     void presentAnchorHeight() {
-        // Gate on whether the band is actually overridden, not the toggle: a forced shrink (grow off) resizes it too
+
         int id = activeFrontId();
         swapped = applied && client.isResized() && presentStockRendered(id);
         swappedHudId = swapped ? id : -1;
     }
 
-    // Present stock height for a modal's opening salvo, so it lays out against full space before the ungrow
     void forceStockRendered() {
         presentStockRendered(activeFrontId());
     }
 
-    // Write the stock rendered height directly, bypassing the reserve. Returns whether it changed anything.
     private boolean presentStockRendered(int id) {
         Widget hud = client.getWidget(id);
         if (hud == null) return false;
         Integer base = stockReserve.get(id);
-        if (base == null || hud.getOriginalHeight() == base) return false; // Never overrode, or already stock
+        if (base == null || hud.getOriginalHeight() == base) return false;
         Widget parent = hud.getParent();
         if (parent == null) return false;
-        int stockRendered = parent.getHeight() - base; // MINUS height resolves as parentHeight minus reserve
+        int stockRendered = parent.getHeight() - base;
         if (hud.getHeight() != stockRendered) Widgets.setHeight(hud, stockRendered);
         return true;
     }
 
-    // Undo presentAnchorHeight, so the band isn't clipped to stock. Held while the overlay drag hotkey is
-    // down: a corner dragged in that mode is converted against the live container, on the AWT thread.
     private void restoreLayoutHeight() {
         if (!swapped || dragHotkeyHeld) return;
         int id = swappedHudId;
         swapped = false;
         swappedHudId = -1;
         Widget hud = id < 0 ? null : client.getWidget(id);
-        if (hud != null) hud.revalidate(); // Recompute the rendered height from the (band) reserve
+        if (hud != null) hud.revalidate();
     }
 
     void restore() {
@@ -191,7 +172,7 @@ public final class RuneLiteHudAnchors {
 
     private void restore(int id) {
         Integer base = stockReserve.get(id);
-        if (base == null) return; // Never overrode this container
+        if (base == null) return;
         Widget w = client.getWidget(id);
         if (w != null && w.getOriginalHeight() != base) {
             w.setOriginalHeight(base);
@@ -202,9 +183,7 @@ public final class RuneLiteHudAnchors {
     }
 
     private int activeFrontId() {
-        // Match RuneLite's own HUD-container selection. The stone-arrangement varbit can lag the
-        // active toplevel during layout changes, which would resize an inactive container and leave
-        // the visible mounted interface stuck at its old height.
+
         return frontIdForTopLevel(client.getTopLevelInterfaceId());
     }
 
@@ -214,18 +193,14 @@ public final class RuneLiteHudAnchors {
             : InterfaceID.ToplevelOsrsStretch.HUD_CONTAINER_FRONT;
     }
 
-    // Restores the real band height after the snap-corner read, before the draw. A separate object
-    // because EventBus wants every BeforeRender handler named onBeforeRender (one per class).
     final class BeforeDrawRestore {
-        // After OverlayRenderer's default-priority snap-corner read, before the draw
+
         @Subscribe(priority = -1)
         void onBeforeRender(BeforeRender event) {
             restoreLayoutHeight();
         }
     }
 
-    // An empty overlay that exists for its render() timing. The indicators are DYNAMIC/PRIORITY_DEFAULT in
-    // ABOVE_WIDGETS, where DYNAMIC sorts by ascending priority and ahead of every positioned overlay.
     private static final class HeightSlice extends Overlay {
         private final Runnable slice;
 
@@ -239,7 +214,7 @@ public final class RuneLiteHudAnchors {
         @Override
         public Dimension render(Graphics2D graphics) {
             slice.run();
-            return null; // Draws nothing; the empty bounds keep it out of hit tests and the corner stack
+            return null;
         }
     }
 }

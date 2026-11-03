@@ -31,7 +31,7 @@ public class OfflineChatStatusModuleTest
             Fixture f = new Fixture(type);
             f.format();
             assertEquals("<col=808080><img=5>Alice</col>", f.name);
-            f.format(); // Repeated updates must not accumulate decorations.
+            f.format();
             assertEquals("<col=808080><img=5>Alice</col>", f.name);
             f.online = true;
             f.format();

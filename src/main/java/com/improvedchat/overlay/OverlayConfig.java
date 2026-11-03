@@ -17,7 +17,6 @@ import java.util.UUID;
 import net.runelite.api.ChatMessageType;
 import net.runelite.client.config.Notification;
 
-/** Per-overlay settings for Improved Chat. */
 public final class OverlayConfig {
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
@@ -33,7 +32,7 @@ public final class OverlayConfig {
     private volatile java.util.List<OverlayTextReplacement> textReplacements = java.util.Collections.emptyList();
 
     private boolean showClanRankIcons = true;
-    private Boolean showChannelNames; // Missing in saved overlays inherits the existing global preference.
+    private Boolean showChannelNames;
     private boolean showOfflineStatus;
     private boolean showOfflineIcon = true;
     private boolean colorOfflineNames = true;
@@ -78,11 +77,10 @@ public final class OverlayConfig {
     private boolean roundedCorners;
     private AnimatedTextStyle animatedTextStyle = AnimatedTextStyle.NORMAL;
     private int rgbCycleSeconds = 8;
-    private boolean customRgbCycle; // Missing in old JSON means the existing full spectrum cycle.
+    private boolean customRgbCycle;
     private Color rgbColor1 = new Color(255, 102, 122);
     private Color rgbColor2 = new Color(106, 203, 255);
-    private OverlayTextSettings textSettings; // null identifies overlays that still need migration.
-
+    private OverlayTextSettings textSettings;
 
     private volatile Notification notification = Notification.OFF;
     private AttentionTrigger notificationTrigger = AttentionTrigger.ALL_NEW_MESSAGES;
@@ -146,7 +144,6 @@ public final class OverlayConfig {
 
     public void renewId() { id = UUID.randomUUID().toString(); }
 
-    /** Gson writes fields directly, so validate persisted values before creating controls. */
     public void normalize() {
         setNotification(notification);
         setName(name);

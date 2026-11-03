@@ -3,7 +3,6 @@ package com.improvedchat.overlay;
 import com.improvedchat.ChatDisplayText;
 import com.improvedchat.MessageColorRuleEngine;
 
-/** Display-only replacement; never edits captured history, MessageNode or outgoing input. */
 public final class OverlayTextReplacements {
     private OverlayTextReplacements() { }
 

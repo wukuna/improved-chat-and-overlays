@@ -1,6 +1,5 @@
 package com.improvedchat.model;
 
-/** Horizontal alignment for text rendered inside an Improved Chat overlay. */
 public enum TextAlignment {
     LEFT("Left"),
     CENTER("Center"),

@@ -12,13 +12,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Distinguishes first use from an intentionally empty saved list. */
 public final class OverlayConfigStore {
     public static final int MAX_JSON = 2_000_000;
     public static final int MAX_OVERLAYS = 64;
     private OverlayConfigStore() { }
 
-    /** Bound parsing before Gson allocates objects; quoted braces are not structural depth. */
     public static void validateSize(String json) {
         if (json == null) return;
         if (json.length() > MAX_JSON) throw new JsonParseException("Saved overlays exceed 2 million characters");

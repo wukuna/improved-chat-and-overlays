@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -47,13 +47,11 @@ import javax.inject.Singleton;
 
 @Singleton
 public class ChatBackgroundGraphic {
-    // Improved Chat frame: deliberately not Chat Resizer's tiled stone border.
-    // Four slim rails plus two accent grips make the resized edge visually distinct.
+
     private static final int FRAME_RAIL = 2;
     private static final int FRAME_GRIP = 20;
     private static final int FRAME_COLOR = 0x4B5563;
 
-    // Chat tab bar, buttons, and stock layout values
     private static final int TAB_STOCK_W = 56;
     private static final int TAB_STOCK_GAP = 6;
     private static final int TAB_STOCK_MARGIN = 5;
@@ -77,11 +75,9 @@ public class ChatBackgroundGraphic {
         InterfaceID.Chatbox.CHAT_TRADE_GRAPHIC,
     };
 
-    // Tab bar button shifting and label alignment
     private static final int ALIGN_SHIFT = 1;
     private static final int MINIMUM_GAP = 10;
 
-    // Chat background stretching and trimming
     private static final int BACKGROUND_STRETCH_X = 40;
     private static final int BACKGROUND_STRETCH_Y = 75;
     private static final int CORNER_BLEED_TRIM = 1;
@@ -99,8 +95,6 @@ public class ChatBackgroundGraphic {
         this.config = config;
     }
 
-    // Fit the normal chat background to the box. Dialogue/options temporarily reuse this surface
-    // for their own bordered parchment and must retain complete ownership of that native artwork.
     void syncBackground(int targetW, int targetH, boolean dialogOpen) {
         Widget background = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
         if (background == null) return;
@@ -114,7 +108,7 @@ public class ChatBackgroundGraphic {
             return;
         }
 
-        if (!isParchment(body)) { // Nothing to clip, so the zoom comes off entirely
+        if (!isParchment(body)) {
             untrimBackground(background);
             stackGradientBands(background, targetH);
             return;
@@ -126,7 +120,6 @@ public class ChatBackgroundGraphic {
             zoomBakedSprite(body, targetW, targetH);
         }
 
-        // Only worth shaving the corners off a zoomed sprite whose border is redrawn over them
         if (config.noBackgroundZoom() || config.noBorders()) {
             untrimBackground(background);
         } else {
@@ -146,9 +139,8 @@ public class ChatBackgroundGraphic {
         }
     }
 
-    // Stretch the background sprite so the baked-in edges get clipped
     private void zoomBakedSprite(Widget body, int targetW, int targetH) {
-        // Must use setWidth/setHeight here
+
         Widgets.setWidth(body, targetW + BACKGROUND_STRETCH_X * 2);
         Widgets.setHeight(body, targetH + BACKGROUND_STRETCH_Y * 2);
         body.setForcedPosition(body.getOriginalX() - BACKGROUND_STRETCH_X, body.getOriginalY() - BACKGROUND_STRETCH_Y);
@@ -156,7 +148,6 @@ public class ChatBackgroundGraphic {
         zoomed = true;
     }
 
-    // Trim the transparent corner pixels off the background parchment; re-asserted each pass, the engine resets the size
     private void trimBackground(Widget background) {
         background.setSize(CORNER_BLEED_TRIM, CORNER_BLEED_TRIM);
         background.setForcedPosition(0, CORNER_BLEED_TRIM);
@@ -164,7 +155,6 @@ public class ChatBackgroundGraphic {
         trimmed = true;
     }
 
-    // Revert the sprite zoom; the revalidate resolves the literal size back off the widget's own layout fields
     private void unzoomBakedSprite(Widget body) {
         if (!zoomed) return;
         zoomed = false;
@@ -173,7 +163,6 @@ public class ChatBackgroundGraphic {
         body.revalidate();
     }
 
-    // Revert the corner bleed adjustment; the engine restores the size on its own rebuilds but never the position
     private void untrimBackground(Widget background) {
         if (!trimmed) return;
         trimmed = false;
@@ -182,18 +171,16 @@ public class ChatBackgroundGraphic {
         background.revalidate();
     }
 
-    // A transparent chat draws as a stack of bands the engine cuts to the height it read on its last rebuild, so
-    // they hold that height through a resize. Re-cut them; the last band takes the remainder the division dropped.
     private static void stackGradientBands(Widget background, int targetH) {
         Widget[] bands = background.getDynamicChildren();
         if (bands == null || bands.length == 0) return;
-        if (background.getHeight() != targetH) return; // Box isn't at our size, e.g. drawing small mid layout swap
-        if (targetH < bands.length) return; // Too short to divide: every band but the last would collapse to nothing
+        if (background.getHeight() != targetH) return;
+        if (targetH < bands.length) return;
 
         int n = bands.length, bandH = targetH / n;
         for (int i = 0; i < n; i++) {
             Widget band = bands[i];
-            if (band == null || band.getHeightMode() != WidgetSizeMode.ABSOLUTE) continue; // Fills on its own
+            if (band == null || band.getHeightMode() != WidgetSizeMode.ABSOLUTE) continue;
             int y = bandH * i, h = i == n - 1 ? targetH - y : bandH;
             if (band.getOriginalY() == y && band.getOriginalHeight() == h) continue;
             band.setOriginalY(y);
@@ -202,8 +189,6 @@ public class ChatBackgroundGraphic {
         }
     }
 
-    // Add a slim custom frame as children of CHATAREA since CHAT_BACKGROUND is finicky.
-    // This intentionally uses flat rectangle rails rather than Chat Resizer's stone sprite pieces.
     private void drawBorder(Widget chatArea, Widget parchment) {
         if (!borderPresent(chatArea)) {
             borderPieces = new Widget[6];
@@ -219,12 +204,12 @@ public class ChatBackgroundGraphic {
         int gripColor = config.indicatorColor().getRGB() & 0xFFFFFF;
 
         int[][] rects = {
-            { 0, 0, w, FRAME_RAIL },                                  // top rail
-            { 0, Math.max(0, h - FRAME_RAIL), w, FRAME_RAIL },         // bottom rail
-            { 0, 0, FRAME_RAIL, h },                                   // left rail
-            { Math.max(0, w - FRAME_RAIL), 0, FRAME_RAIL, h },         // right rail
-            { Math.max(0, (w - FRAME_GRIP) / 2), 0, FRAME_GRIP, 4 },   // top grip
-            { Math.max(0, w - 4), Math.max(0, (h - FRAME_GRIP) / 2), 4, FRAME_GRIP }, // side grip
+            { 0, 0, w, FRAME_RAIL },
+            { 0, Math.max(0, h - FRAME_RAIL), w, FRAME_RAIL },
+            { 0, 0, FRAME_RAIL, h },
+            { Math.max(0, w - FRAME_RAIL), 0, FRAME_RAIL, h },
+            { Math.max(0, (w - FRAME_GRIP) / 2), 0, FRAME_GRIP, 4 },
+            { Math.max(0, w - 4), Math.max(0, (h - FRAME_GRIP) / 2), 4, FRAME_GRIP },
         };
 
         for (int i = 0; i < rects.length; i++) {
@@ -257,7 +242,6 @@ public class ChatBackgroundGraphic {
         borderPieces = null;
     }
 
-    // True when all border pieces are live under the latest widget
     private boolean borderPresent(Widget chatArea) {
         if (borderPieces == null) return false;
 
@@ -269,7 +253,6 @@ public class ChatBackgroundGraphic {
         return true;
     }
 
-    // Draw, refresh, or tear down the resize frame. Dialogue/options keep their native border untouched.
     void syncBorder(Widget chatArea, boolean reposition, boolean dialogOpen) {
         if (dialogOpen || config.noBorders()) {
             destroyBorder();
@@ -280,17 +263,16 @@ public class ChatBackgroundGraphic {
         Widget body = background == null ? null : getBackgroundBody(background);
 
         if (body == null) {
-            syncBorderVisibility(null); // Box blanked (e.g. a cutscene): keep the pieces parked and hidden
+            syncBorderVisibility(null);
         } else if (!isParchment(body)) {
-            destroyBorder(); // Transparent chat draws gradient bands instead of parchment, so there's nothing to frame
-        } else if (reposition || !borderPresent(chatArea)) { // Not present or we need to reposition
+            destroyBorder();
+        } else if (reposition || !borderPresent(chatArea)) {
             drawBorder(chatArea, body);
         } else {
             syncBorderVisibility(body);
         }
     }
 
-    // Match the border to the parchment it frames, which the game hides or drops out from under us
     private void syncBorderVisibility(Widget parchment) {
         if (borderPieces == null) return;
 
@@ -298,7 +280,6 @@ public class ChatBackgroundGraphic {
         for (Widget piece : borderPieces) if (piece != null && piece.isSelfHidden() != hidden) piece.setHidden(hidden);
     }
 
-    // Passing 0 resets behavior to stock
     void resizeTabBar(int dw) {
         Widget controls = client.getWidget(InterfaceID.Chatbox.CONTROLS);
         Widget graphic = client.getWidget(InterfaceID.Chatbox.CONTROLS_BACKGROUND_GRAPHIC);
@@ -307,26 +288,23 @@ public class ChatBackgroundGraphic {
         Widget[] tabs = getTabs();
         if (tabs == null) return;
 
-        // Update background graphic width, gaps between tab buttons
         controls.setOriginalWidth(ChatGeometry.CHATBOX_SPRITE_W + dw);
         graphic.setOriginalWidth(ChatGeometry.CHATBOX_SPRITE_W + dw);
 
-        // Adjust chat tab button widths, graphics, and labels
         boolean resize = config.resizeTabButtons();
-        boolean measure = resize && dw != 0; // Stock and revert paths stay centered
+        boolean measure = resize && dw != 0;
         int n = tabs.length, stonesTW = stonesTotal(dw, n), gapsTW = gapsTotal(dw, n);
         for (int i = 0; i < n; i++) {
             Widget[] tabSC = tabs[i].getStaticChildren();
             int w = resize ? tabTargetW(i, stonesTW, n) : TAB_STOCK_W;
             tabs[i].setOriginalWidth(w);
             tabs[i].setOriginalX(resize ? tabStretchX(i, dw, stonesTW, gapsTW, n) : tabSpreadX(i, dw, n));
-            if (tabSC.length > 0 && tabSC[0] != null) tabSC[0].setOriginalWidth(w); // Resize tab button graphic
-            if (tabSC.length > 1 && tabSC[1] != null) alignLabel(tabSC[1], measure, w); // Tab button label text
-            if (tabSC.length > 2 && tabSC[2] != null) alignLabel(tabSC[2], measure, w); // Tab button config text
+            if (tabSC.length > 0 && tabSC[0] != null) tabSC[0].setOriginalWidth(w);
+            if (tabSC.length > 1 && tabSC[1] != null) alignLabel(tabSC[1], measure, w);
+            if (tabSC.length > 2 && tabSC[2] != null) alignLabel(tabSC[2], measure, w);
         }
     }
 
-    // Check if tab bar is already laid out for this width delta
     boolean tabBarMatches(int dw) {
         Widget controls = client.getWidget(InterfaceID.Chatbox.CONTROLS);
         if (controls == null) return true;
@@ -349,14 +327,11 @@ public class ChatBackgroundGraphic {
         return true;
     }
 
-    // Tab index of a chat tab button's component ID (equals its varc CHAT_VIEW value), or -1 if not a chat tab
     static int tabIndexOf(@Component int componentId) {
         for (int i = 0; i < CHAT_TAB_BUTTONS.length; i++) if (CHAT_TAB_BUTTONS[i] == componentId) return i;
         return -1;
     }
 
-    // The engine rebuilds these to match how the chat actually draws: one parchment sprite when opaque (set opaque,
-    // or a dialog forcing it), gradient rectangles when transparent, and none at all while the box is blanked
     private Widget getBackgroundBody(Widget background) {
         Widget[] dynamic = background.getDynamicChildren();
         if (dynamic == null || dynamic.length == 0) return null;
@@ -371,54 +346,46 @@ public class ChatBackgroundGraphic {
         Widget[] tabs = new Widget[CHAT_TAB_BUTTONS.length];
         for (int i = 0; i < CHAT_TAB_BUTTONS.length; i++) {
             tabs[i] = client.getWidget(CHAT_TAB_BUTTONS[i]);
-            if (tabs[i] == null) return null; // Not all tabs present yet
-            if (tabs[i].getXPositionMode() != WidgetPositionMode.ABSOLUTE_RIGHT) return null; // Still in construction
+            if (tabs[i] == null) return null;
+            if (tabs[i].getXPositionMode() != WidgetPositionMode.ABSOLUTE_RIGHT) return null;
         }
         return tabs;
     }
 
-    // Width available for the stones and gaps, between the left margin and the report button
     private static int tabSpace(int dw, int n) {
         return n * TAB_STOCK_W + (n - 1) * TAB_STOCK_GAP + dw;
     }
 
-    // Combined gap width: stock-constant while growing; absorbs shrink first, until the stones touch
     private static int gapsTotal(int dw, int n) {
         return Math.max(MINIMUM_GAP, Math.min((n - 1) * TAB_STOCK_GAP, tabSpace(dw, n) - n * TAB_STOCK_W));
     }
 
-    // Combined stone width: absorbs growth beyond stock, and shrink once the gaps are gone
     private static int stonesTotal(int dw, int n) {
         return Math.max(n, tabSpace(dw, n) - gapsTotal(dw, n));
     }
 
-    // Stone widths distributed evenly
     private static int tabTargetW(int i, int stones, int n) {
         return stones * (i + 1) / n - stones * i / n;
     }
 
-    // Offset from the bar's right edge when stones stay stock-size: spread them proportionally instead
     private static int tabSpreadX(int i, int dw, int n) {
         return TAB_STOCK_X[i] + dw * (n - i) / n;
     }
 
-    // Offset from the bar's right edge
     private static int tabStretchX(int i, int dw, int stones, int gaps, int n) {
         int x = TAB_STOCK_MARGIN + stones * i / n + gaps * i / (n - 1);
         return ChatGeometry.CHATBOX_SPRITE_W + dw - x - tabTargetW(i, stones, n);
     }
 
-    // Left-align a label when its text is too wide to draw centered in its stone
     private static void alignLabel(Widget label, boolean measure, int stoneW) {
         int alignment = measure && labelOverflows(label, stoneW) ? WidgetTextAlignment.LEFT : WidgetTextAlignment.CENTER;
-        int originalX = alignment == WidgetTextAlignment.LEFT ? ALIGN_SHIFT : 0; // Default originalX is 0
+        int originalX = alignment == WidgetTextAlignment.LEFT ? ALIGN_SHIFT : 0;
         if (label.getXTextAlignment() == alignment && label.getOriginalX() == originalX) return;
         label.setXTextAlignment(alignment);
         label.setOriginalX(originalX);
-        label.revalidate(); // In case main apply short-circuits
+        label.revalidate();
     }
 
-    // Measure the label's text in its own font (tags like <col> are skipped by getTextWidth)
     private static boolean labelOverflows(Widget label, int stoneW) {
         FontTypeFace font = label.getFont();
         String text = label.getText();

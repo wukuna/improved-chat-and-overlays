@@ -3,13 +3,6 @@ package com.improvedchat.model;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.MessageNode;
 
-/**
- * Stable identity snapshot for a RuneLite chat message node.
- *
- * RuneLite may recycle MessageNode objects as the chat buffer advances. Code which keeps a node
- * reference beyond the current chat event must verify that the node still represents the same
- * logical message before reading from or writing to it.
- */
 public final class MessageNodeIdentity
 {
     private final int id;

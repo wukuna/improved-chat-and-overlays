@@ -77,11 +77,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-/**
- * Core plugin class. Maintains a single shared message pool ({@link OverlayMessage}) fed by
- * {@code onChatMessage}, and manages a dynamic list of {@link DynamicChatOverlay} instances
- * that each filter and render a subset of the pool based on their {@link OverlayConfig}.
- */
 @PluginDescriptor(
         name = "Improved Chat and Overlays",
         configName = "improvedchat",
@@ -92,7 +87,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     public static final boolean DEBUG = false;
 
-    // Separate Plugin Hub identity; do not share configuration with Chat Widgets.
     private static final String CONFIG_GROUP = "improvedchat";
     private static final String OVERLAY_CONFIGS_KEY = "overlayConfigs";
     private static final int MAX_POOL_SIZE = 5000;
@@ -103,7 +97,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             new MessageMergeRule("You drink", Pattern.compile("You have [0-9].*")),
             new MessageMergeRule("You drink", "You have finished your potion.", true),
             new MessageMergeRule("You are now a guest of", "To talk, start each", false),
-//            new MessageMergeRule("Now talking in chat-channel", "To talk, start each", false),
 
     };
 
@@ -121,13 +114,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             ChatMessageType.CLAN_GIM_CHAT
     );
 
-    /**
-     * Chat types the RuneLite Emojis plugin converts (mirrors its own gate in EmojiPlugin). For
-     * these we seed the stored body from the live message node instead of the immutable event
-     * message snapshot, so emoji {@code <img=N>} tags inserted by that plugin reach our overlays.
-     * All nine are also {@link #SENDER_TYPES}, so reconciliation rebuilds via
-     * {@link OverlayMessage#senderMessage}.
-     */
     private static final Set<ChatMessageType> EMOJI_WATCHED_TYPES = EnumSet.of(
             ChatMessageType.PUBLICCHAT,
             ChatMessageType.MODCHAT,
@@ -140,9 +126,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             ChatMessageType.MODPRIVATECHAT
     );
 
-    /** All message types the plugin will capture into the shared pool. */
     private static final Set<ChatMessageType> ALL_SUPPORTED_TYPES = EnumSet.of(
-            // Game
+
             ChatMessageType.GAMEMESSAGE, ChatMessageType.SPAM, ChatMessageType.CONSOLE,
             ChatMessageType.WELCOME, ChatMessageType.BROADCAST, ChatMessageType.DIDYOUKNOW,
             ChatMessageType.ENGINE, ChatMessageType.UNKNOWN, ChatMessageType.LEVELUPMESSAGE,
@@ -153,18 +138,18 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             ChatMessageType.ITEM_EXAMINE, ChatMessageType.NPC_EXAMINE, ChatMessageType.OBJECT_EXAMINE,
             ChatMessageType.CLAN_MESSAGE, ChatMessageType.CLAN_GUEST_MESSAGE,
             ChatMessageType.CLAN_GIM_MESSAGE, ChatMessageType.CLAN_CREATION_INVITATION,
-            // Trade
+
             ChatMessageType.TRADE, ChatMessageType.TRADE_SENT, ChatMessageType.TRADEREQ,
             ChatMessageType.CHALREQ_TRADE, ChatMessageType.CHALREQ_FRIENDSCHAT,
-            // Public
+
             ChatMessageType.PUBLICCHAT, ChatMessageType.MODCHAT,
             ChatMessageType.AUTOTYPER, ChatMessageType.MODAUTOTYPER,
-            // Friends chat
+
             ChatMessageType.FRIENDSCHAT,
-            // Clan
+
             ChatMessageType.CLAN_CHAT, ChatMessageType.CLAN_GUEST_CHAT, ChatMessageType.CLAN_GIM_CHAT,
             ChatMessageType.CHALREQ_CLANCHAT,
-            // Private
+
             ChatMessageType.PRIVATECHAT, ChatMessageType.PRIVATECHATOUT, ChatMessageType.MODPRIVATECHAT,
             ChatMessageType.LOGINLOGOUTNOTIFICATION
     );
@@ -235,15 +220,12 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Inject private net.runelite.client.input.MouseManager mouseManager;
 
-    // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
 
-    // Mirrors the Chat Filter plugin's word/regex lists when "Use Chat Filter" is enabled
     private final ChatMessageFilter chatMessageFilter = new ChatMessageFilter();
     private Plugin chatFilterPlugin;
     private Plugin emojiPlugin;
 
-    // Dynamic overlays
     private final List<OverlayConfig> overlayConfigs = new CopyOnWriteArrayList<>();
     private final Map<String, Long> clearedThrough = new ConcurrentHashMap<>();
     private String configRecoveryMessage;
@@ -260,30 +242,17 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     private ImprovedChatPanel panel;
     private boolean pmWidgetsHidden = false;
 
-    // Messages whose backing MessageNode may be rewritten in place by another plugin after we
-    // capture it — Chat Commands (command results) or the RuneLite Emojis plugin (<img=N> tags).
-    // Drained on subsequent game ticks by reconcilePendingUpdates().
     private final List<PendingMessageUpdate> pendingUpdates = new ArrayList<>();
 
-    // The Chat Commands plugin rewrites a command's result into the RuneLite-format message; it can
-    // take several ticks to arrive, so command entries linger until then.
     private static final int COMMAND_UPDATE_TICKS = 10;
     private static final Function<MessageNode, String> COMMAND_VALUE = MessageNode::getRuneLiteFormatMessage;
 
-    // The Emojis plugin converts shortcuts to <img=N> synchronously within the same dispatch, so a
-    // single follow-up tick suffices before the entry is dropped.
     private static final int EMOJI_UPDATE_TICKS = 1;
     private static final Function<MessageNode, String> EMOJI_VALUE = node -> {
         String value = node.getValue();
         return value == null ? null : value.trim();
     };
 
-    /**
-     * A pooled message whose backing {@link MessageNode} may be rewritten in place by another
-     * plugin after capture. Reconciled on subsequent ticks by {@link #reconcilePendingUpdates()}:
-     * once {@code valueAccessor} reports a value different from {@code originalText}, the pooled
-     * message is rebuilt with it; the entry is dropped when it updates or after its tick budget.
-     */
     static class PendingMessageUpdate {
         final OverlayMessage widgetMessage;
         final MessageNode messageNode;
@@ -451,8 +420,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
-    // --- Overlay config management ---
-
     public List<OverlayConfig> getOverlayConfigs() {
         return overlayConfigs;
     }
@@ -498,10 +465,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
-    /**
-     * Deletes every existing overlay and restores the two defaults created on first install
-     * (same set and order as {@link #loadOverlayConfigs()}). Destructive — callers should confirm.
-     */
     public void resetOverlays() {
         overlayPersistenceBlocked = false;
         configRecoveryMessage = null;
@@ -569,8 +532,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         refreshOverlayPriorities();
     }
 
-    // --- Persistence ---
-
     private void loadOverlayConfigs() {
         overlayConfigs.clear();
         configRecoveryMessage = null;
@@ -579,7 +540,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         try {
             overlayConfigs.addAll(OverlayConfigStore.read(gson, json));
         } catch (RuntimeException ex) {
-            // Preserve the original before later edits can replace an unreadable configuration.
+
             overlayConfigs.addAll(OverlayConfigStore.defaults());
             if (json != null && json.length() > OverlayConfigStore.MAX_JSON) {
                 overlayPersistenceBlocked = true;
@@ -675,19 +636,15 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY, json);
     }
 
-    // --- Private-chat visibility ---
-
     private void updatePmWidgetVisibility() {
         boolean shouldHide = config.hidePrivateChat();
         setPmWidgetsHidden(shouldHide);
         pmWidgetsHidden = shouldHide;
     }
 
-    // --- Event handlers ---
-
     @Subscribe
     public void onBeforeRender(net.runelite.api.events.BeforeRender event) {
-        // Publish input eligibility on the client thread; AWT wheel dispatch only reads snapshots.
+
         overlayWheelReady = client.getGameState() == GameState.LOGGED_IN && !client.isMenuOpen() && !client.isWidgetSelected()
                 && !com.improvedchat.chatbox.resize.TopLevelModals.hasOpenModal(client);
         for (DynamicChatOverlay overlay : overlays) overlay.updateScrollInputState();
@@ -748,7 +705,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             return;
         }
 
-        // Handle chatbox tab "Clear history" options
         if (option.contains("Clear")) {
             if (option.contains("Game:")) {
                 clearMessagesForCategories(
@@ -779,12 +735,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
-    /**
-     * Handles clicks on the overlay-level "Clear [name] history" right-click entries. These are
-     * {@link net.runelite.client.ui.overlay.OverlayMenuEntry} entries dispatched via
-     * {@link OverlayMenuClicked} (not {@code MenuOptionClicked}), so we use the clicked overlay
-     * reference directly rather than parsing the menu target string.
-     */
     @Subscribe
     public void onOverlayMenuClicked(OverlayMenuClicked event) {
         if (event.getOverlay() instanceof DynamicChatOverlay) {
@@ -821,8 +771,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
         message = message.trim();
 
-        // RuneLite's normal chatbox expands Jagex symbolic macros before display. ChatMessage can
-        // still expose those tokens, so expand system/game messages before we store or style them.
         if (!SENDER_TYPES.contains(type)
                 && type != ChatMessageType.LOGINLOGOUTNOTIFICATION
                 && message.indexOf('@') >= 0) {
@@ -832,16 +780,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             }
         }
 
-        // Emoji support: for emoji-eligible types that aren't chat commands, seed the stored body
-        // from the message node (mutated in place by the RuneLite Emojis plugin to insert <img=N>)
-        // rather than the immutable pre-plugin event message. Gated on the Emojis plugin being
-        // enabled so we only switch capture source when there's a reason to — otherwise an unrelated
-        // plugin's in-place node edit (e.g. Chat Filter censoring) could leak into what we store.
-        // Commands (message.startsWith("!")) stay on the command path below. Reconciled on the next
-        // tick in onGameTick, catching the case where Emojis is registered after us and hasn't
-        // converted yet at capture.
         MessageNode messageNode = event.getMessageNode();
-        // Native message colors remain owned by RuneLite Chat Color; rules are overlay-only.
 
         boolean emojiWatched = EMOJI_WATCHED_TYPES.contains(type)
                 && !message.startsWith("!")
@@ -856,14 +795,11 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         message = ChatDisplayText.normalize(type, message);
         if (message.trim().isEmpty()) return;
 
-        // Keep the shared pool unfiltered. Global/per-overlay filtering is applied when each
-        // overlay selects messages so one overlay can hide a message while another still shows it.
         String sender = cleanSender(event.getName());
         String channelName = cleanSender(event.getSender());
         boolean isOutgoing = type == ChatMessageType.PRIVATECHATOUT;
         boolean isBossKc = BOSS_KC_PATTERN.matcher(message).find();
 
-        // Handle message merging for game-type messages
         if (!SENDER_TYPES.contains(type) && type != ChatMessageType.LOGINLOGOUTNOTIFICATION) {
             for (MessageMergeRule rule : MESSAGE_MERGE_RULES) {
                 if (rule.matchesPreviousPrefix(message)) {
@@ -886,7 +822,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             }
         }
 
-        // Create the new message
         OverlayMessage newMsg;
         if (type == ChatMessageType.LOGINLOGOUTNOTIFICATION) {
             int maxFade = 5;
@@ -906,8 +841,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             messages.remove(0);
         }
 
-        // Track potential chat commands for delayed updates by Chat Commands plugin; otherwise
-        // watch emoji-eligible messages for the Emojis plugin's next-tick <img=N> conversion.
         if (messageNode != null && message.startsWith("!")) {
             pendingUpdates.add(new PendingMessageUpdate(
                     newMsg, messageNode, COMMAND_VALUE, message, COMMAND_UPDATE_TICKS));
@@ -922,19 +855,11 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         reconcilePendingUpdates();
     }
 
-    /**
-     * Drains {@link #pendingUpdates}, rebuilding any pooled message whose backing node has been
-     * rewritten since capture (Chat Commands results, Emojis {@code <img=N>} tags). Each entry is
-     * dropped once its value changes and the message is rebuilt, or once its tick budget runs out.
-     */
     private void reconcilePendingUpdates() {
         for (int i = pendingUpdates.size() - 1; i >= 0; i--) {
             PendingMessageUpdate pending = pendingUpdates.get(i);
             pending.ticksRemaining--;
 
-            // MessageNode instances are recycled by RuneLite. If this object now represents a
-            // different chat message, drop the pending rewrite instead of transplanting the new
-            // message body into the older pooled overlay entry.
             if (!pending.stillRepresentsOriginalMessage()) {
                 pendingUpdates.remove(i);
                 continue;
@@ -950,11 +875,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
-    /**
-     * Replaces the pooled {@code old} message with a copy carrying {@code newBody}, preserving its
-     * kind, sequence, and metadata. Duplicate counts are computed in each overlay's view, so a
-     * delayed rewrite never removes another captured message. No-op if already evicted.
-     */
     private void rebuildPooledMessage(OverlayMessage old, String newBody) {
         int idx = messages.indexOf(old);
         if (idx < 0) {
@@ -1031,8 +951,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void scheduleNativeChatOwnershipReconcile() {
-        // Defer once past the current event dispatch, then queue at tick end. This lets Modern Chat
-        // enqueue its own start/stop restoration first, including its tick-end legacy-chat restore.
+
         if (!nativeChatActive) return;
         long generation = nativeChatGeneration;
         clientThread.invokeLater(() -> {
@@ -1075,7 +994,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             return;
         }
 
-        // Keep our copy of the Chat Filter lists in sync as the user edits them.
         if ("chatfilter".equals(event.getGroup())) {
             rebuildChatFilter();
             refreshPanel();
@@ -1124,16 +1042,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
     }
 
-    /** Recompiles the Chat Filter patterns from the Chat Filter plugin's live config. */
     private void rebuildChatFilter() {
         chatMessageFilter.rebuild(configManager.getConfig(ChatFilterConfig.class));
     }
 
-    /**
-     * True when RuneLite's built-in Chat Filter plugin is currently enabled. The config lists are
-     * always readable, but we only filter when the plugin itself is on — otherwise the user isn't
-     * filtering their chat and shouldn't have overlay messages silently removed.
-     */
     private boolean isChatFilterEnabled() {
         if (chatFilterPlugin == null) {
             for (Plugin p : pluginManager.getPlugins()) {
@@ -1146,12 +1058,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         return chatFilterPlugin != null && pluginManager.isPluginEnabled(chatFilterPlugin);
     }
 
-    /**
-     * True when RuneLite's Emojis plugin is currently enabled. Only then do we seed captured bodies
-     * from the live message node (and watch for its {@code <img=N>} rewrite); otherwise we keep the
-     * raw event message so an unrelated plugin's in-place node edit (e.g. Chat Filter censoring)
-     * can't silently change what we store and render.
-     */
     private boolean isEmojiPluginEnabled() {
         if (emojiPlugin == null) {
             for (Plugin p : pluginManager.getPlugins()) {
@@ -1187,8 +1093,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     protected void sendOverlayNotification(Notification notification, String message) { notifier.notify(notification, message); }
-
-    // --- Message access for overlays ---
 
     @Override
     public java.awt.event.MouseWheelEvent mouseWheelMoved(java.awt.event.MouseWheelEvent event) {
@@ -1232,7 +1136,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
         int maxMessages = history ? overlayConfig.getHistoryLimit() : overlayConfig.getMaxMessages();
         List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
-        // CopyOnWriteArrayList's iterator already provides a stable snapshot.
+
         for (OverlayMessage msg : messages) {
 
             if (!types.contains(msg.getType())) {
@@ -1278,8 +1182,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         messages.clear();
     }
 
-    // --- Utility ---
-
     private String cleanSender(String name) {
         if (name == null) {
             return null;
@@ -1296,12 +1198,6 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         return null;
     }
 
-    /**
-     * DEBUG aid: prepends the message's {@link ChatMessageType} to the live chatbox line so the
-     * type of every message (including ones the plugin doesn't capture) is visible in-game. Only
-     * the chatbox node is modified; the overlay pool reads {@code event.getMessage()}, a separate
-     * copy, so overlays still render the clean message.
-     */
     private void prependDebugType(ChatMessage event) {
         MessageNode node = event.getMessageNode();
         if (node == null) {
@@ -1388,8 +1284,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         if (hidden && container != null) {
             Widget[] children = container.getDynamicChildren();
             if (children != null) {
-                // Native PM rows have four dynamic parts. The same parent also contains the
-                // system-update timer; hiding its parent suppresses that safety information.
+
                 for (int row = 0; row < children.length; row += 4) {
                     boolean timer = false;
                     for (int i = row; i < Math.min(row + 4, children.length); i++) {

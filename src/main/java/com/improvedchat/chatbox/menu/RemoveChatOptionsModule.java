@@ -2,19 +2,19 @@
  * Adapted portions from Remove Chat Options by Andrew Jones.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2025, Andrew Jones
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,7 +48,6 @@ import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
-/** Simplifies chat-message context menus. Hold Control to expose the original menu. */
 @Singleton
 public final class RemoveChatOptionsModule {
     private static final int REPORT_BUTTON_COMPONENT_ID = 10616863;

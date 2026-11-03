@@ -14,7 +14,7 @@ public class OverlayPersistenceSafetyTest
         Field blocked = ImprovedChatPlugin.class.getDeclaredField("overlayPersistenceBlocked");
         blocked.setAccessible(true);
         blocked.setBoolean(plugin, true);
-        // No serializer or ConfigManager is injected: reaching either would fail this test.
+
         plugin.saveOverlayConfigs();
     }
 

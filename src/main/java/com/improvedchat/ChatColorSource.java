@@ -1,6 +1,5 @@
 package com.improvedchat;
 
-/** Selects which RuneLite Chat Color palette supplies an overlay's baseline colors. */
 public enum ChatColorSource {
     AUTOMATIC("RuneLite (automatic)"),
     TRANSPARENT("RuneLite transparent"),

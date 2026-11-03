@@ -38,19 +38,6 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Provides font creation, caching, rendering-hint application, and word-wrap /
- * centred-text drawing utilities used by {@link DialogueFontsOverlay}.
- *
- * <p>Fonts are created from Java logical font names (SansSerif, Serif, etc.)
- * which are always available on every OS with no bundled TTF files required.
- * The derived {@link Font} object is cached and only rebuilt when the config
- * changes (font family, size, or bold flag).
- *
- * <h3>Statelessness contract</h3>
- * The only mutable state is the font cache.  All layout information (bounds,
- * segments) is passed in per call and is never stored on the instance.
- */
 @Slf4j
 @Singleton
 public class FontRenderer
@@ -58,23 +45,11 @@ public class FontRenderer
 	@Inject
 	private ImprovedChatConfig config;
 
-	// -------------------------------------------------------------------------
-	// Font cache — invalidated when any config key that affects the font changes
-	// -------------------------------------------------------------------------
-
 	private Font   cachedFont       = null;
 	private String lastFontKey      = null;
 	private Font   cachedOptionFont = null;
 	private String lastOptionFontKey = null;
 
-	// -------------------------------------------------------------------------
-	// Font access
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Returns the currently configured {@link Font}, rebuilding it only when
-	 * the font family, size, or bold flag has changed since the last call.
-	 */
 	public Font getFont()
 	{
 		String key = config.fontFamily().getJavaName()
@@ -91,11 +66,6 @@ public class FontRenderer
 		return cachedFont;
 	}
 
-	/**
-	 * Returns the font used for option-dialogue rows.
-	 * Option rows share the same configured font as body text — "one font for
-	 * everything" keeps the config panel simple.
-	 */
 	public Font getOptionFont()
 	{
 		String key = config.fontFamily().getJavaName()
@@ -111,15 +81,6 @@ public class FontRenderer
 		return cachedOptionFont;
 	}
 
-	// -------------------------------------------------------------------------
-	// Rendering helpers
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Applies (or removes) text anti-aliasing rendering hints based on the
-	 * current config.  Call once per {@link DialogueFontsOverlay#render} frame
-	 * before drawing any text.
-	 */
 	public void applyRenderingHints(Graphics2D g)
 	{
 		if (config.antiAlias())
@@ -138,12 +99,6 @@ public class FontRenderer
 		}
 	}
 
-	/**
-	 * Draws a single-line string centred horizontally within {@code bounds}
-	 * using an explicitly supplied {@code font}.
-	 *
-	 * @return the y coordinate of the bottom of the drawn line
-	 */
 	public int drawCenteredString(Graphics2D g, String text, Rectangle bounds, int y, Color color, Font font)
 	{
 		if (text == null || text.isEmpty())
@@ -157,27 +112,11 @@ public class FontRenderer
 		return y + fm.getHeight();
 	}
 
-	/**
-	 * Draws a single-line string centred horizontally within {@code bounds}
-	 * using the currently configured font.
-	 *
-	 * @return the y coordinate of the bottom of the drawn line
-	 */
 	public int drawCenteredString(Graphics2D g, String text, Rectangle bounds, int y, Color color)
 	{
 		return drawCenteredString(g, text, bounds, y, color, getFont());
 	}
 
-	/**
-	 * Word-wraps {@code segments} to fit within {@code bounds.width} and draws
-	 * each line centred horizontally.
-	 *
-	 * @param g        graphics context
-	 * @param segments styled text segments (may contain {@code '\n'} for forced breaks)
-	 * @param bounds   the text area rectangle (used for width constraint and x origin)
-	 * @param startY   top y coordinate of the first line
-	 * @return y coordinate immediately below the last drawn line
-	 */
 	public int drawWrappedText(Graphics2D g,
 	                           List<TextSegment> segments,
 	                           Rectangle bounds,
@@ -192,7 +131,7 @@ public class FontRenderer
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics(font);
 
-		int maxWidth  = bounds.width - 8; // 4 px horizontal padding each side
+		int maxWidth  = bounds.width - 8;
 		int lineHeight = Math.max(1, fm.getHeight() + config.dialogueLineSpacing());
 		int y = startY;
 
@@ -203,7 +142,7 @@ public class FontRenderer
 		{
 			if (y + lineHeight > bounds.y + bounds.height)
 			{
-				break; // no more vertical space
+				break;
 			}
 
 			int lineWidth = measureLine(line, fm);
@@ -236,10 +175,6 @@ public class FontRenderer
 		g.setColor(color);
 		g.drawString(text, x, baselineY);
 	}
-
-	// -------------------------------------------------------------------------
-	// Private layout helpers
-	// -------------------------------------------------------------------------
 
 	private static List<WordToken> tokenise(List<TextSegment> segments)
 	{
@@ -321,10 +256,6 @@ public class FontRenderer
 		}
 		return width;
 	}
-
-	// -------------------------------------------------------------------------
-	// Inner types
-	// -------------------------------------------------------------------------
 
 	private static final class WordToken
 	{

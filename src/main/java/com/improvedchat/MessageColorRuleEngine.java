@@ -10,10 +10,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.runelite.api.ChatMessageType;
 
-/**
- * Message Color Rules for Improved Chat overlays only.
- * Migrated overlays retain their previous color precedence; new highlights may override defaults.
- */
 public final class MessageColorRuleEngine {
     private static volatile ImprovedChatConfig config;
     private static final Map<String, List<SolidRule>> RULE_CACHE = new LinkedHashMap<>();
@@ -25,7 +21,6 @@ public final class MessageColorRuleEngine {
         synchronized (RULE_CACHE) { RULE_CACHE.clear(); }
     }
 
-    /** Returns the Message Color Rules color for a message, or null when this layer does not apply. */
     public static Color colorFor(String rawMessage, ChatMessageType type) {
         return colorFor(rawMessage, type, config);
     }
@@ -42,7 +37,6 @@ public final class MessageColorRuleEngine {
         return null;
     }
 
-    /** True when a matching Message Color Rule includes the optional ::flash modifier. */
     public static boolean flashFor(String rawMessage, ChatMessageType type) {
         return flashFor(rawMessage, type, config);
     }
@@ -77,7 +71,6 @@ public final class MessageColorRuleEngine {
             body = body.substring(0, pipe);
         }
 
-        // Force means force: remove only color-control tags so embedded colors cannot beat this layer.
         body = body.replaceAll("(?i)</?col(?:=[0-9a-f]{6}|NORMAL|HIGHLIGHT)?[^>]*>", "");
         String hex = String.format("%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
         return prefix + "<col=" + hex + ">" + body + "</col>" + suffix;
@@ -150,7 +143,7 @@ public final class MessageColorRuleEngine {
                     TextRule rule = TextRule.compile(expression);
                     if (rule != null) out.add(new SolidRule(rule, group, flash));
                 } catch (NumberFormatException ignored) {
-                    // Ignore malformed rules instead of affecting chat stability.
+
                 }
             }
             if (RULE_CACHE.size() >= 64) RULE_CACHE.remove(RULE_CACHE.keySet().iterator().next());

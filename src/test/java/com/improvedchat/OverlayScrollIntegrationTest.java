@@ -76,9 +76,9 @@ public class OverlayScrollIntegrationTest {
         BufferedImage history=f.render(f.overlay);
         assertFalse(java.util.Arrays.equals(latest.getRGB(30,20,300,50,null,0,300),history.getRGB(30,20,300,50,null,0,300)));
         Rectangle input=inputRows(latest);
-        sameRows(latest,history,input.y,input.y+input.height); // input row remains in place
+        sameRows(latest,history,input.y,input.y+input.height);
         list(f.plugin,"messages").add(OverlayMessage.gameMessage("New arrival",1,ChatMessageType.GAMEMESSAGE,false));
-        sameRows(history,f.render(f.overlay),20,input.y+input.height); // arrival does not move the history page
+        sameRows(history,f.render(f.overlay),20,input.y+input.height);
         f.plugin.onOverlayMenuClicked(new OverlayMenuClicked(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY,"Latest","History"),f.overlay));
         BufferedImage resumed=f.render(f.overlay);
         assertFalse(java.util.Arrays.equals(history.getRGB(30,20,300,50,null,0,300),resumed.getRGB(30,20,300,50,null,0,300)));
@@ -160,7 +160,7 @@ public class OverlayScrollIntegrationTest {
             when(window.getId()).thenReturn(group);
             when(components.get((long) slot)).thenReturn(window);
             assertFalse(f.wheel(60,40,-1,0).isConsumed());
-            sameRows(before, f.render(f.overlay), 20, 150); // Still draws behind the window; no history loss.
+            sameRows(before, f.render(f.overlay), 20, 150);
             clearInvocations(f.client, components);
             MouseWheelEvent wheel = new MouseWheelEvent(new Canvas(), MouseWheelEvent.MOUSE_WHEEL,
                     0, 0, 60, 40, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 3, -1);

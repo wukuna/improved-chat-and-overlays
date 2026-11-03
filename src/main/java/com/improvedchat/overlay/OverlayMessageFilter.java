@@ -10,10 +10,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.runelite.client.util.Text;
 
-/**
- * Cached per-overlay content filter. Rules are recompiled only when that overlay's filter settings
- * change, never once per render line.
- */
 public final class OverlayMessageFilter
 {
     private String wordsSnapshot = "";
@@ -44,7 +40,6 @@ public final class OverlayMessageFilter
         return mode == OverlayFilterMode.HIDE_MATCHES ? matched : !matched;
     }
 
-    /** Editor feedback only; rendering still tolerates invalid saved expressions. */
     public List<String> validationMessages(OverlayConfig config)
     {
         List<String> errors = new ArrayList<>();

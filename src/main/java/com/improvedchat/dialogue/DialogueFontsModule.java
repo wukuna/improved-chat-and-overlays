@@ -10,9 +10,6 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.OverlayManager;
 
-/**
- * Lifecycle wrapper for the integrated Dialogue Fonts feature.
- */
 @Singleton
 public final class DialogueFontsModule {
     @Inject private ImprovedChatConfig config;

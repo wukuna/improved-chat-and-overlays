@@ -12,14 +12,13 @@ import net.runelite.client.config.NotificationSound;
 import net.runelite.client.config.RequestFocusType;
 import net.runelite.client.util.Text;
 
-/** Event-time notification policy. Rendering and history updates never send alerts. */
 public final class OverlayNotifications {
     private OverlayNotifications() { }
 
     public static boolean eligible(OverlayConfig config, OverlayMessage message, List<OverlayMessage> visible) {
         if (config == null || message == null || !config.isShow() || !config.getNotification().isEnabled()
                 || message.isOutgoing() || message.getType() == ChatMessageType.CONSOLE) return false;
-        // Console notifications emitted by Notifier must not notify recursively.
+
         if (visible.stream().noneMatch(item -> item.getSequence() == message.getSequence())) return false;
         return config.getNotificationTrigger() == AttentionTrigger.ALL_NEW_MESSAGES
                 || MessageColorRuleEngine.flashFor(message.getMessage(), message.getType(), config.getTextSettings());
@@ -35,7 +34,7 @@ public final class OverlayNotifications {
     public static Notification normalize(Notification value) {
         Notification n = value == null ? Notification.OFF : value;
         String name = n.getSoundName();
-        // Delegate playback to RuneLite; only allow a filename in its notification directory.
+
         if (name != null && (name.length() > 128 || name.contains("/") || name.contains("\\")
                 || name.contains(":") || name.contains(".."))) name = null;
         if (name != null && name.trim().isEmpty()) name = null;

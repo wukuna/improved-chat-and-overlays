@@ -17,7 +17,6 @@ import javax.swing.SwingUtilities;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Headless interaction/layout checks against the real Swing panel. */
 public class ImprovedChatPanelTest {
     @org.junit.BeforeClass public static void useClientTheme() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
@@ -335,7 +334,7 @@ public class ImprovedChatPanelTest {
             assertEquals(2, originals.size());
             originals.get(1).setText("Your boost expired."); replacements.get(1).setText("Drink another potion!");
             button(panel,"REMOVE REPLACEMENT").doClick();
-            // A detached field's old callback must not edit the newly first rule after removal.
+
             staleField.setText("detached editor callback");
             OverlayConfig config = plugin.configs.get(0);
             assertEquals(1,config.getTextReplacements().size());

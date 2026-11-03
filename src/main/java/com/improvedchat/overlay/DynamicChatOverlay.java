@@ -32,12 +32,6 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
-/**
- * One configurable Improved Chat overlay.
- *
- * <p>Free overlays use RuneLite's normal movable/resizable overlay system. Player-attached
- * overlays are positioned from the local player's canvas point with explicit X/Y offsets.
- */
 public class DynamicChatOverlay extends Overlay {
     private static final int MIN_ZOOM = -22;
     private static final int MAX_ZOOM = 1400;
@@ -74,8 +68,7 @@ public class DynamicChatOverlay extends Overlay {
         this.overlayConfig = overlayConfig;
 
         setPosition(client.isResized() ? OverlayPosition.ABOVE_CHATBOX_RIGHT : OverlayPosition.BOTTOM_LEFT);
-        // RuneLite promotes freely positioned UNDER_WIDGETS overlays above interfaces.
-        // ABOVE_SCENE remains behind them even after dragging or loading a saved position.
+
         setLayer(OverlayLayer.ABOVE_SCENE);
         setMinimumSize(150);
         applyPlacementPolicy(true);
@@ -84,7 +77,7 @@ public class DynamicChatOverlay extends Overlay {
 
     @Override
     public String getName() {
-        // Keep the legacy overlay name: RuneLite uses it to restore saved positions.
+
         return "Improved Chat " + (overlayConfig == null ? "Overlay" : overlayConfig.getId());
     }
 
@@ -140,7 +133,7 @@ public class DynamicChatOverlay extends Overlay {
         if (mode == PlacementMode.FREE) {
             setMovable(true);
             setSnappable(true);
-            // Do not clear preferredLocation here. RuneLite owns and persists free-overlay placement.
+
         } else {
             setMovable(false);
             setSnappable(false);
@@ -164,14 +157,13 @@ public class DynamicChatOverlay extends Overlay {
 
         int widgetWidth = getEffectiveWidth();
 
-        // Reserve border space even between attention flashes, so the text does not jump.
         int borderInset = overlayConfig.isBorderEnabled()
                 || (overlayConfig.isFlashEnabled() && overlayConfig.isFlashBorder())
                 ? overlayConfig.getBorderThickness().getPixels() : 0;
         int minimumGap = borderInset > 0 || overlayConfig.isRoundedCorners() ? 3 : 0;
         int paddingX = borderInset + Math.max(minimumGap, overlayConfig.getPaddingHorizontal());
         int paddingY = borderInset + Math.max(minimumGap, overlayConfig.getPaddingVertical());
-        // Text is painted one pixel right of its origin, with a further pixel for shadows.
+
         int contentWidth = Math.max(1, widgetWidth - paddingX * 2 - 2);
         long currentTime = System.currentTimeMillis();
         boolean drawShadow = globalConfig.textShadow();
@@ -216,7 +208,6 @@ public class DynamicChatOverlay extends Overlay {
             return null;
         }
 
-        // The RuneScape font can paint accents one pixel above its reported ascent.
         int lineAscent = metrics.getAscent() + 1;
         for (RenderLine line : renderableLines) {
             lineAscent = Math.max(lineAscent, iconAscent(line.segments, modIcons, fontSize, metrics));
@@ -225,7 +216,7 @@ public class DynamicChatOverlay extends Overlay {
             lineAscent = Math.max(lineAscent, iconAscent(inputSegments.name, modIcons, fontSize, metrics));
             lineAscent = Math.max(lineAscent, iconAscent(inputSegments.text, modIcons, fontSize, metrics));
         }
-        int lineDescent = Math.max(2, metrics.getDescent() + 1); // Shadows and underlines need the extra pixel.
+        int lineDescent = Math.max(2, metrics.getDescent() + 1);
         int lineHeight = lineAscent + lineDescent + metrics.getLeading();
         int inputExtra = inputSegments == null ? 0 : lineHeight;
         int contentHeight = useDynamicHeight && !historyMode
@@ -242,7 +233,7 @@ public class DynamicChatOverlay extends Overlay {
         if (!followPlayer && useDynamicHeight && !historyMode && getPreferredLocation() == null
                 && (anchor == OverlayPosition.BOTTOM_LEFT || anchor == OverlayPosition.BOTTOM_RIGHT
                     || anchor == OverlayPosition.ABOVE_CHATBOX_RIGHT) && getBounds().height > 0) {
-            // RuneLite places bottom-anchored overlays using the previous frame's bounds.
+
             paintHeight = getBounds().height;
         }
         Shape originalClip = graphics.getClip();
@@ -272,7 +263,7 @@ public class DynamicChatOverlay extends Overlay {
         }
 
         for (int i = renderableLines.size() - 1; i >= 0; i--) {
-            // Wrapped messages and the previous frame's bounds can leave less than a full row.
+
             if (y - lineAscent < paddingY) break;
             RenderLine line = renderableLines.get(i);
             if (line.alpha <= 0) {
@@ -288,7 +279,6 @@ public class DynamicChatOverlay extends Overlay {
 
         return followPlayer ? null : new Dimension(widgetWidth, widgetHeight);
     }
-
 
     private List<RenderLine> messageLines(OverlayMessage msg, FontMetrics metrics, FontSize fontSize,
             IndexedSprite[] modIcons, int contentWidth, long currentTime, long fadeOutMs,
@@ -360,7 +350,6 @@ public class DynamicChatOverlay extends Overlay {
                 && System.currentTimeMillis() - lastPaint <= 500 && scrollBounds.contains(point);
     }
 
-    /** Called only on the client/render thread. Mouse callbacks must never read widgets. */
     public void updateScrollInputState() {
         scrollVisible = overlayConfig.isScrollHistory() && shouldRender() && System.currentTimeMillis() >= previewUntil;
         if (!scrollVisible) scrollBounds = new java.awt.Rectangle();
@@ -501,10 +490,10 @@ public class DynamicChatOverlay extends Overlay {
         int nameWidth = calculateLineWidth(input.name, metrics);
         int textWidth = calculateLineWidth(input.text, metrics);
         int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
-        // Leave room for the text's one-pixel offset and shadow at the right edge.
+
         int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth,
                 nameWidth + textWidth + 2);
-        // Even an oversized name must leave a little room for the newest input.
+
         int gap = nameWidth > 0 && nameWidth + textWidth + 2 > contentWidth ? metrics.charWidth(' ') : 0;
         int fixedWidth = Math.min(nameWidth + gap, Math.max(0, contentWidth - Math.min(32, textWidth + 2)));
         int textLeft = x + fixedWidth;
@@ -516,7 +505,7 @@ public class DynamicChatOverlay extends Overlay {
             preview.clipRect(x, y - lineAscent, fixedWidth, lineHeight);
             drawSegmentsAt(preview, input.name, 255, x, y, paddingX, fontSize, metrics, modIcons, drawShadow, now);
             preview.setClip(clip);
-            // Clip at the username boundary even with a transparent background.
+
             preview.clipRect(textLeft, y - lineAscent, textSpace, lineHeight);
             drawSegmentsAt(preview, input.text, 255, textLeft - scroll, y, paddingX,
                     fontSize, metrics, modIcons, drawShadow, now);

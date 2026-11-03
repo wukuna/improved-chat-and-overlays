@@ -2,19 +2,19 @@
  * Adapted portions from Chat Resizer by shanktank.
  *
  * BSD 2-Clause License
- * 
+ *
  * Copyright (c) 2026, shanktank
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
+
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -53,21 +53,18 @@ import javax.inject.Singleton;
 
 @Singleton
 public class FixedModeChat {
-    private static final int STOCK_Y = ChatGeometry.FIXED_CHAT_Y; // Stock top of CHAT_CONTAINER in fixed layout
+    private static final int STOCK_Y = ChatGeometry.FIXED_CHAT_Y;
     private static final int STOCK_W = ChatGeometry.CHATBOX_SPRITE_W;
     private static final int STOCK_H = ChatGeometry.CHATBOX_SLOT_H;
     private static final int TAB_BAR_H = STOCK_H - ChatGeometry.CHATBOX_SPRITE_H;
     private static final int STOCK_BOTTOM = STOCK_Y + STOCK_H;
 
-    // Viewport container, used to adjust viewport as chat height shrinks
     private static final int MAIN_TOP = 4;
     private static final int STOCK_MAIN_H = 334;
 
-    // Viewport's side border sprites, must be extended as chat height shrinks
     private static final int RIGHT_BORDER_TOP = 205;
     private static final int RIGHT_BORDER_H = 133;
 
-    // Value of menu option when a chat tab is left-clicked, use as marker for hiding/unhiding chat
     private static final String SWITCH_TAB = "Switch tab";
 
     private final Client client;
@@ -79,11 +76,11 @@ public class FixedModeChat {
     private final TopLevelModals mainModals;
 
     private int lastTargetY = STOCK_Y;
-    private boolean relayoutNeeded; // The viewport band changed under an open modal
-    private boolean rebuildNeeded; // Chat height changed; lines keep stale positions until a chatbox rebuild
+    private boolean relayoutNeeded;
+    private boolean rebuildNeeded;
 
-    @Getter @Setter private boolean collapsed; // Chat collapsed to just the tab bar via clicking the open chat tab
-    private int savedTab = -1; // Open tab saved while collapse parks CHAT_VIEW on the sentinel
+    @Getter @Setter private boolean collapsed;
+    private int savedTab = -1;
 
     @Inject
     FixedModeChat(
@@ -102,10 +99,9 @@ public class FixedModeChat {
 
     void onEnable() {
         apply(true);
-        if (consumeRebuildNeeded()) ChatRebuild.now(client, RawScripts.REWRAPS_CHAT); // Ensure no stale positioning
+        if (consumeRebuildNeeded()) ChatRebuild.now(client, RawScripts.REWRAPS_CHAT);
     }
 
-    // Returns the applied slot size, or null if not in fixed layout / widgets missing
     Dimension apply(boolean force) {
         Widget universe = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (universe == null) return null;
@@ -118,27 +114,26 @@ public class FixedModeChat {
         boolean dialogOpen = dialogBoxes.isDialogOpen();
         int rawHeightChange = effectiveHeightChange(dialogOpen);
         int heightChange = SizeClamps.clamp(rawHeightChange, true, modalOpen, dialogOpen, config);
-        // Viewport keeps its pre-dialog size to avoid a camera jerk, so this is the height with no dialog
+
         int heldHeightChange = dialogOpen && !modalOpen ? effectiveHeightChange(false) : heightChange;
 
-        // Clamp height to [gone, full frame]; bottom edge stays pinned, top grows up toward 0
         int targetH = Math.min(STOCK_BOTTOM, Math.max(0, STOCK_H + heightChange));
         int targetY = STOCK_BOTTOM - targetH;
         int heldH = Math.min(STOCK_BOTTOM, Math.max(0, STOCK_H + heldHeightChange));
-        int heldY = STOCK_BOTTOM - heldH; // Chat top the viewport is held to while a dialog is open
+        int heldY = STOCK_BOTTOM - heldH;
 
         if (targetY != lastTargetY) {
             lastTargetY = targetY;
             rebuildNeeded = true;
-            if (mainModals.isTopLevelModalOpen()) relayoutNeeded = true; // Modal must re-fit to the changed band
+            if (mainModals.isTopLevelModalOpen()) relayoutNeeded = true;
         }
 
-        int backgroundH = Math.max(0, targetH - TAB_BAR_H); // Excludes the tab bar, and is gone once shrink reaches it
-        int minViewH = config.fixedAdjustViewport() ? 0 : STOCK_MAIN_H; // Handle chat height above stock
-        int chatBandH = Math.max(minViewH, targetY - MAIN_TOP); // Band above the chat the viewport must fill
-        int mainH = Math.max(chatBandH, heldY - MAIN_TOP); // Viewport keeps held band but must always reach chat top
+        int backgroundH = Math.max(0, targetH - TAB_BAR_H);
+        int minViewH = config.fixedAdjustViewport() ? 0 : STOCK_MAIN_H;
+        int chatBandH = Math.max(minViewH, targetY - MAIN_TOP);
+        int mainH = Math.max(chatBandH, heldY - MAIN_TOP);
         int viewportBottom = MAIN_TOP + mainH;
-        int pmH = targetY - MAIN_TOP; // Split-PM box height so its bottom lands at the chat top
+        int pmH = targetY - MAIN_TOP;
 
         Widget main = client.getWidget(InterfaceID.Toplevel.MAIN);
 
@@ -148,9 +143,9 @@ public class FixedModeChat {
             (main == null || main.getHeight() == mainH)
         ) {
             bgGraphic.syncBackground(STOCK_W, backgroundH, dialogOpen);
-            bgGraphic.syncBorder(chatArea, false, dialogOpen); // Recreate if dropped, else re-sync visibility
-            extendViewportBorders(viewportBottom); // Re-assert side borders (engine resets them on rebuilds)
-            pmSplit.setPmBoxHeight(pmH); // Re-assert split-PM position (engine resets it on rebuilds)
+            bgGraphic.syncBorder(chatArea, false, dialogOpen);
+            extendViewportBorders(viewportBottom);
+            pmSplit.setPmBoxHeight(pmH);
             if (dialogOpen) dialogBoxes.centerDialogs();
             return new Dimension(STOCK_W, targetH);
         }
@@ -161,29 +156,26 @@ public class FixedModeChat {
         bgGraphic.syncBorder(chatArea, true, dialogOpen);
         bgGraphic.syncBackground(STOCK_W, backgroundH, dialogOpen);
         pmSplit.setPmBoxHeight(pmH);
-        if (dialogOpen) dialogBoxes.centerDialogs(); // Mounted dialog groups need placing by hand, as in resizable
+        if (dialogOpen) dialogBoxes.centerDialogs();
         return new Dimension(STOCK_W, targetH);
     }
 
-    // True once when the viewport band has changed under an open modal
     boolean consumeRelayoutNeeded() {
         boolean needed = relayoutNeeded;
         relayoutNeeded = false;
         return needed;
     }
 
-    // True once when the chat height has changed and lines need re-laying out
     boolean consumeRebuildNeeded() {
         boolean needed = rebuildNeeded;
         rebuildNeeded = false;
         return needed;
     }
 
-    // Revert to stock using absolute universe, next engine chatbox rebuild fully restore native mode
     void restore() {
         collapsed = false;
         if (savedTab != -1 && client.getVarcIntValue(VarClientID.CHAT_VIEW) == RawScripts.COLLAPSED_TAB)
-            client.setVarcIntValue(VarClientID.CHAT_VIEW, savedTab); // Must unpark with raw write
+            client.setVarcIntValue(VarClientID.CHAT_VIEW, savedTab);
         savedTab = -1;
         lastTargetY = STOCK_Y;
         relayoutNeeded = false;
@@ -192,43 +184,38 @@ public class FixedModeChat {
         Widget universe = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (slot != null && !isStock(slot, universe)) sizeChat(slot, universe, STOCK_Y, STOCK_H);
         sizeViewport(client.getWidget(InterfaceID.Toplevel.MAIN), STOCK_MAIN_H);
-        extendViewportBorders(STOCK_Y); // Reset side borders to stock
+        extendViewportBorders(STOCK_Y);
         pmSplit.setPmBoxHeight(STOCK_Y - MAIN_TOP);
         dialogBoxes.resetDialogPositions();
         bgGraphic.revertBackground();
         bgGraphic.destroyBorder();
     }
 
-    // Park chat view on the collapsed sentinel so messages blink their tab's stone, reopen the saved tab on uncollapse
     void syncCollapsedTab() {
         int tab = client.getVarcIntValue(VarClientID.CHAT_VIEW);
         if (collapsed) {
             if (tab != RawScripts.COLLAPSED_TAB) {
-                if (savedTab == -1) savedTab = tab; // Avoid clearing parked tab on dialog open
+                if (savedTab == -1) savedTab = tab;
                 client.setVarcIntValue(VarClientID.CHAT_VIEW, RawScripts.COLLAPSED_TAB);
-                client.runScript(RawScripts.REDRAW_CHAT_BUTTONS); // Repaint tab as unselected
+                client.runScript(RawScripts.REDRAW_CHAT_BUTTONS);
             }
         } else if (tab == RawScripts.COLLAPSED_TAB) {
-            if (savedTab != -1) { // Uncollapsed by hotkey/config/drag; reopen and clear blink
+            if (savedTab != -1) {
                 client.runScript(RawScripts.CHAT_TAB_CLICKED, 1, savedTab);
                 savedTab = -1;
             }
         } else {
-            savedTab = -1; // Uncollapsed by clicking a tab; the click script already opened it
+            savedTab = -1;
         }
     }
 
-    // Show or hide chat in fixed layout when active chat tab button is clicked
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (client.isResized() || !config.fixedTabCollapse() || !event.getMenuOption().equals(SWITCH_TAB)) return;
-        int tab = ChatBackgroundGraphic.tabIndexOf(event.getParam1()); // Param1 is the clicked widget's component ID
+        int tab = ChatBackgroundGraphic.tabIndexOf(event.getParam1());
         if (tab != -1) setCollapsed(!isCollapsed() && tab == client.getVarcIntValue(VarClientID.CHAT_VIEW));
     }
 
-    // Height change before dialog adjustments: swap-aware config value, or full shrink while tab-collapsed. The min
-    // keeps a collapse a shrink. A dialog drops the collapse's shrink alone, ungated, while the collapse itself
-    // stands; the gate still governs the configured height underneath (ResizableModeChat has the twin of this).
     int effectiveHeightChange(boolean dialogOpen) {
         int configured = swapSize.effectiveFixedHeightChange();
         return collapsed && !dialogOpen ? Math.min(-ChatGeometry.CHATBOX_SPRITE_H, configured) : configured;
@@ -246,32 +233,29 @@ public class FixedModeChat {
         if (universe == null) return;
         universe.setSize(STOCK_W, h, WidgetSizeMode.ABSOLUTE, WidgetSizeMode.ABSOLUTE);
         universe.revalidate();
-        Widgets.revalidateChildren(universe); // Reflow chat area, tabs, scroll, background
+        Widgets.revalidateChildren(universe);
     }
 
-    // Grow/shrink the 3D viewport container so a shrunk chat exposes game instead of a black band
     private void sizeViewport(Widget main, int h) {
         if (main == null || main.getOriginalHeight() == h) return;
         main.setOriginalHeight(h);
         main.revalidate();
-        Widgets.revalidateChildren(main); // Reflow the viewport + in-scene overlays
+        Widgets.revalidateChildren(main);
         sizeAtmosphere();
     }
 
-    // Resize atmosphere overlays to cover newly added viewport area
     private void sizeAtmosphere() {
         Widget slot = client.getWidget(InterfaceID.Toplevel.OVERLAY_ATMOSPHERE);
         if (slot == null) return;
         WidgetNode mounted = client.getComponentTable().get(InterfaceID.Toplevel.OVERLAY_ATMOSPHERE);
-        if (mounted == null) return; // Current area has no tint
+        if (mounted == null) return;
         Widget root = Widgets.mountedRoot(client, mounted.getId());
         if (root == null) return;
         Widgets.setWidth(root, slot.getWidth());
         Widgets.setHeight(root, slot.getHeight());
-        Widgets.revalidateChildren(root); // Nested tint layers follow the root
+        Widgets.revalidateChildren(root);
     }
 
-    // Extend the viewport's left/right border sprites down to the viewport bottom
     private void extendViewportBorders(int vpB) {
         resizeBorder(InterfaceID.Toplevel.CONTROL, MAIN_TOP, STOCK_MAIN_H, vpB, false);
         resizeBorder(InterfaceID.Toplevel.GAMEFRAME_GRAPHIC5, RIGHT_BORDER_TOP, RIGHT_BORDER_H, vpB, true);
@@ -280,9 +264,9 @@ public class FixedModeChat {
     private void resizeBorder(@Component int widgetId, int top, int stockH, int bottom, boolean tile) {
         Widget border = client.getWidget(widgetId);
         if (border == null) return;
-        int h = Math.max(stockH, bottom - top); // Stay stock when the viewport shrinks; follow it down when grown
+        int h = Math.max(stockH, bottom - top);
         if (border.getOriginalHeight() == h) return;
-        if (tile) border.setSpriteTiling(true); // Repeat the texture instead of stretching its detail
+        if (tile) border.setSpriteTiling(true);
         border.setOriginalHeight(h);
         border.revalidate();
     }
