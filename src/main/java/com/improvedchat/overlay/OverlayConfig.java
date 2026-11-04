@@ -69,6 +69,8 @@ public final class OverlayConfig {
     private String fontFamily = "RuneScape";
     private boolean boldText;
     private Color backgroundColour = TRANSPARENT;
+    private String backgroundImage;
+    private String backgroundImageLabel;
 
     private boolean borderEnabled;
     private Color borderColour = Color.WHITE;
@@ -81,6 +83,10 @@ public final class OverlayConfig {
     private Color rgbColor1 = new Color(255, 102, 122);
     private Color rgbColor2 = new Color(106, 203, 255);
     private OverlayTextSettings textSettings;
+    private OverlayColorSettings borderColors;
+    private OverlayColorSettings textColors;
+    private OverlayColorSettings timestampColors;
+    private Boolean timestampColorOverride;
 
     private volatile Notification notification = Notification.OFF;
     private AttentionTrigger notificationTrigger = AttentionTrigger.ALL_NEW_MESSAGES;
@@ -156,6 +162,7 @@ public final class OverlayConfig {
         setOffsetX(offsetX);
         setOffsetY(offsetY);
         getMessageTypes().remove(null);
+        initializeColors();
     }
 
     public String getId() {
@@ -279,8 +286,12 @@ public final class OverlayConfig {
     public boolean isOverlayColorOverrideEnabled() { return overlayColorOverrideEnabled; }
     public void setOverlayColorOverrideEnabled(boolean enabled) { overlayColorOverrideEnabled = enabled; }
 
-    public Color getOverlayTextColor() { return overlayTextColor == null ? Color.WHITE : overlayTextColor; }
-    public void setOverlayTextColor(Color color) { overlayTextColor = color == null ? Color.WHITE : color; }
+    public Color getOverlayTextColor() { return textColors == null ? legacyTextColor() : textColors.getPrimary(); }
+    private Color legacyTextColor() { return overlayTextColor == null ? Color.WHITE : overlayTextColor; }
+    public void setOverlayTextColor(Color color) {
+        overlayTextColor = color == null ? Color.WHITE : color;
+        if (textColors != null) textColors.setPrimary(overlayTextColor);
+    }
 
     public boolean isDynamicHeight() { return dynamicHeight; }
     public void setDynamicHeight(boolean value) { dynamicHeight = value; }
@@ -333,6 +344,14 @@ public final class OverlayConfig {
 
     public Color getBackgroundColour() { return backgroundColour == null ? TRANSPARENT : backgroundColour; }
     public void setBackgroundColour(Color value) { backgroundColour = value == null ? TRANSPARENT : value; }
+    public String getBackgroundImage() { return OverlayBackgroundImages.validName(backgroundImage) ? backgroundImage : ""; }
+    public String getBackgroundImageLabel() {
+        return backgroundImageLabel == null ? "Background image" : backgroundImageLabel.substring(0, Math.min(80, backgroundImageLabel.length()));
+    }
+    public void setBackgroundImage(String name, String label) {
+        backgroundImage = OverlayBackgroundImages.validName(name) ? name : null;
+        backgroundImageLabel = label == null ? null : label.substring(0, Math.min(80, label.length()));
+    }
 
     public boolean isBackgroundEnabled() { return getBackgroundColour().getAlpha() > 0; }
 
@@ -352,7 +371,34 @@ public final class OverlayConfig {
     public boolean isBorderEnabled() { return borderEnabled; }
     public void setBorderEnabled(boolean value) { borderEnabled = value; }
 
-    public Color getBorderColour() { return borderColour == null ? Color.WHITE : borderColour; }
+    public Color getBorderColour() {
+        return borderColors == null ? (borderColour == null ? Color.WHITE : borderColour) : borderColors.getPrimary();
+    }
+
+    private synchronized void initializeColors() {
+        AnimatedTextStyle legacy = animatedTextStyle == null ? AnimatedTextStyle.NORMAL : animatedTextStyle;
+        AnimatedTextStyle mode = legacy == AnimatedTextStyle.RGB_CYCLE && customRgbCycle ? AnimatedTextStyle.DUO_CYCLE : legacy;
+        if (borderColors == null) borderColors = colors(rgbBorder ? AnimatedTextStyle.RGB_WAVE : AnimatedTextStyle.NORMAL, getBorderColour());
+        if (textColors == null) textColors = colors(mode, mode == AnimatedTextStyle.DUO_CYCLE ? getRgbColor1() : legacyTextColor());
+        if (timestampColors == null) timestampColors = colors(mode, mode == AnimatedTextStyle.DUO_CYCLE ? getRgbColor1()
+                : overlayColorOverrideEnabled ? legacyTextColor() : Color.WHITE);
+        if (timestampColorOverride == null) timestampColorOverride = overlayColorOverrideEnabled || contextualColours;
+    }
+
+    private OverlayColorSettings colors(AnimatedTextStyle mode, Color primary) {
+        OverlayColorSettings result = new OverlayColorSettings();
+        result.setMode(mode);
+        result.setPrimary(primary);
+        result.setSecondary(getRgbColor2());
+        result.setCycleSeconds(getRgbCycleSeconds());
+        return result;
+    }
+
+    public OverlayColorSettings getBorderColors() { initializeColors(); return borderColors; }
+    public OverlayColorSettings getTextColors() { initializeColors(); return textColors; }
+    public OverlayColorSettings getTimestampColors() { initializeColors(); return timestampColors; }
+    public boolean isTimestampColorOverride() { initializeColors(); return Boolean.TRUE.equals(timestampColorOverride); }
+    public void setTimestampColorOverride(boolean value) { timestampColorOverride = value; }
     public boolean migrateTextSettings(com.improvedchat.ImprovedChatConfig legacy) {
         if (textSettings != null) return false;
         textSettings = OverlayTextSettings.copyOf(legacy);
@@ -364,22 +410,43 @@ public final class OverlayConfig {
         return textSettings;
     }
     public boolean isCustomRgbCycle() { return customRgbCycle; }
-    public void setCustomRgbCycle(boolean value) { customRgbCycle = value; }
+    public void clearLegacyHighlightCycle() { customRgbCycle = false; }
+    public void setCustomRgbCycle(boolean value) {
+        customRgbCycle = value;
+        if (textColors != null && (textColors.getMode() == AnimatedTextStyle.RGB_CYCLE || textColors.getMode() == AnimatedTextStyle.DUO_CYCLE)) {
+            textColors.setMode(value ? AnimatedTextStyle.DUO_CYCLE : AnimatedTextStyle.RGB_CYCLE);
+            if (value) textColors.setPrimary(getRgbColor1());
+        }
+    }
     public Color getRgbColor1() { return rgbColor1 == null ? new Color(255,102,122) : rgbColor1; }
     public Color getRgbColor2() { return rgbColor2 == null ? new Color(106,203,255) : rgbColor2; }
     public void setRgbColor1(Color value) { rgbColor1 = value; }
     public void setRgbColor2(Color value) { rgbColor2 = value; }
     public boolean isRoundedCorners() { return roundedCorners; }
     public void setRoundedCorners(boolean value) { roundedCorners = value; }
-    public boolean isRgbBorder() { return rgbBorder; }
-    public void setRgbBorder(boolean value) { rgbBorder = value; }
-    public AnimatedTextStyle getAnimatedTextStyle() {
-        return animatedTextStyle == null ? AnimatedTextStyle.NORMAL : animatedTextStyle;
+    public boolean isRgbBorder() { return borderColors == null ? rgbBorder : borderColors.getMode() == AnimatedTextStyle.RGB_WAVE; }
+    public void setRgbBorder(boolean value) {
+        rgbBorder = value;
+        if (borderColors != null) borderColors.setMode(value ? AnimatedTextStyle.RGB_WAVE : AnimatedTextStyle.NORMAL);
     }
-    public void setAnimatedTextStyle(AnimatedTextStyle value) { animatedTextStyle = value; }
+    public AnimatedTextStyle getAnimatedTextStyle() {
+        return textColors == null ? (animatedTextStyle == null ? AnimatedTextStyle.NORMAL : animatedTextStyle) : textColors.getMode();
+    }
+    public void setAnimatedTextStyle(AnimatedTextStyle value) {
+        animatedTextStyle = value;
+        if (textColors != null) textColors.setMode(value == AnimatedTextStyle.RGB_CYCLE && customRgbCycle ? AnimatedTextStyle.DUO_CYCLE : value);
+    }
     public int getRgbCycleSeconds() { return Math.max(2, Math.min(30, rgbCycleSeconds)); }
-    public void setRgbCycleSeconds(int value) { rgbCycleSeconds = Math.max(2, Math.min(30, value)); }
-    public void setBorderColour(Color value) { borderColour = value == null ? Color.WHITE : value; }
+    public void setRgbCycleSeconds(int value) {
+        rgbCycleSeconds = Math.max(2, Math.min(30, value));
+        if (borderColors != null) borderColors.setCycleSeconds(value);
+        if (textColors != null) textColors.setCycleSeconds(value);
+        if (timestampColors != null) timestampColors.setCycleSeconds(value);
+    }
+    public void setBorderColour(Color value) {
+        borderColour = value == null ? Color.WHITE : value;
+        if (borderColors != null) borderColors.setPrimary(borderColour);
+    }
 
     public BorderThickness getBorderThickness() {
         return borderThickness == null ? BorderThickness.NORMAL : borderThickness;

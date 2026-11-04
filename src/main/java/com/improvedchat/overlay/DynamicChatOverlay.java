@@ -242,8 +242,7 @@ public class DynamicChatOverlay extends Overlay {
 
         Color background = overlayConfig.getRenderBackgroundColour();
         if (background.getAlpha() > 0) {
-            graphics.setColor(background);
-            graphics.fillRect(0, 0, widgetWidth, paintHeight);
+            OverlayBackgroundImages.draw(graphics, plugin.getOverlayBackground(overlayConfig), background, widgetWidth, paintHeight);
         }
 
         if (historyMode) {
@@ -530,23 +529,29 @@ public class DynamicChatOverlay extends Overlay {
                 }
             } else {
                 Color segmentColor = segment.color == null ? Color.WHITE : segment.color;
+                OverlayColorSettings colors = segment.timestamp ? overlayConfig.getTimestampColors() : overlayConfig.getTextColors();
+                int textAlpha = colors.pulseAlpha(alpha, now);
                 if (segment.shadow != null) {
-                    graphics.setColor(ChatRenderUtils.withAlpha(segment.shadow, alpha));
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.shadow, textAlpha));
                     graphics.drawString(segment.text, x + 2, y + 1);
                 }
-                com.improvedchat.model.AnimatedTextStyle style = segment.textStyle == null
-                        ? overlayConfig.getAnimatedTextStyle() : segment.textStyle;
+                com.improvedchat.model.AnimatedTextStyle style = segment.timestamp || segment.textStyle == null
+                        ? colors.getMode() : segment.textStyle;
                 int width = style == com.improvedchat.model.AnimatedTextStyle.NORMAL || style == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC
-                        ? ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
+                        ? ChatRenderUtils.drawText(graphics, segment.text, segmentColor, textAlpha, x, y,
                                 segment.shadow == null && drawShadow, metrics)
-                        : RgbAnimation.drawText(graphics, segment.text, alpha, x, y,
-                                segment.shadow == null && drawShadow, metrics, overlayConfig, now, paddingX, style);
+                        : !segment.timestamp && segment.textStyle == com.improvedchat.model.AnimatedTextStyle.RGB_CYCLE
+                                && overlayConfig.isCustomRgbCycle()
+                        ? RgbAnimation.drawText(graphics, segment.text, textAlpha, x, y,
+                                segment.shadow == null && drawShadow, metrics, overlayConfig, now, paddingX, style)
+                        : RgbAnimation.drawText(graphics, segment.text, textAlpha, x, y,
+                                segment.shadow == null && drawShadow, metrics, colors, now, paddingX, style);
                 if (segment.underline != null) {
-                    graphics.setColor(ChatRenderUtils.withAlpha(segment.underline, alpha));
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.underline, textAlpha));
                     graphics.drawLine(x + 1, y + 1, x + width, y + 1);
                 }
                 if (segment.strikethrough != null) {
-                    graphics.setColor(ChatRenderUtils.withAlpha(segment.strikethrough, alpha));
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.strikethrough, textAlpha));
                     int strikeY = y - metrics.getAscent() + (int) (metrics.getAscent() * 0.7);
                     graphics.drawLine(x + 1, strikeY, x + width, strikeY);
                 }

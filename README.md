@@ -8,7 +8,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 - **Recent updates:** a compact bulleted list of changes appears in the chatbox once per update in each RuneLite profile.
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
-- **Overlay RGB effects (Beta)** together under **Style > RGB & Effects**: one-click **RGB for all messages**, matching-message effects, border animation and shared timing. Static RGB, two-color or full-spectrum cycling, and a wave are available. Rules are preserved when using the all-message shortcut; enable **Allow rule overrides** to let matches override it.
+- **Overlay colors** in one **Colors** tab: independent Static color, Duo Cycle, Duo Wave, RGB cycle and RGB wave modes for message text, timestamps and borders. Each has an optional Pulse with its own timer.
 - **Rounded corners** under **Style > Frame** round both the background and border, including animated RGB and flashing borders. Hover controls for brief explanations.
 - **Message replacer (Beta)** with multiple independently enabled rules that show your own text in an overlay while leaving the original chat message unchanged.
 - **Per-overlay chat filtering** with Off, Hide Matches, Show Only Matches, word, regex, and sender/name rules.
@@ -30,7 +30,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
 2. Open **Create** in the side panel to start with a preset or a custom overlay.
-3. Click an overlay name under **Overlays** to open its resizable editor window. Use **Messages**, **Style** and **Alerts**, then try **Preview** while logged in.
+3. Click an overlay name under **Overlays** to open its resizable editor window. Use **Messages**, **Style**, **Colors** and **Alerts**, then try **Preview** while logged in.
 
 Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
 
@@ -46,7 +46,7 @@ Use **Preview** while logged in to check appearance for 10 seconds without waiti
 
 Chat overlays render behind game interfaces, including the bank and bank PIN screens, even after dragging them to a saved position. Opening a game window also suspends overlay history scrolling so it cannot intercept the window's mouse-wheel input. Messages and history remain available when the window closes.
 
-The sidebar has three simple tabs: **Overlays**, **Create** and **Tools**. Click an overlay name to open its separate editor window, then use **Messages**, **Style**, or **Alerts** inside it. Opening another overlay reuses the window; each overlay remembers its selected tab. **Tools → Chatbox settings** opens the regular chatbox options. The header has no introductory paragraph; a compact **Settings notice…** button appears only when settings need attention. Each overlay has a direct enable switch. Changes save automatically as you edit. Expand a section for its controls; hover a setting for brief help. Style puts text and colors first, followed by frame, effects, position and layout. The editor supports duplicating an overlay, confirms deletion, and preserves your scroll position when dependent controls change. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+The sidebar has three simple tabs: **Overlays**, **Create** and **Tools**. Click an overlay name to open its separate editor window, then use **Messages**, **Style**, **Colors**, or **Alerts** inside it. Opening another overlay reuses the window; each overlay remembers its selected tab. **Tools → Chatbox settings** opens the regular chatbox options. The header has no introductory paragraph; a compact **Settings notice…** button appears only when settings need attention. Each overlay has a direct enable switch. Changes save automatically as you edit. Expand a section for its controls; hover a setting for brief help. Style contains fonts and layout. Colors contains text, timestamp, border and background colors, plus Specific Message Highlighting. The editor supports duplicating an overlay, confirms deletion, and preserves your scroll position when dependent controls change. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
 
 Turn off **Messages → Show channel names** to remove the bracketed clan/friends-chat channel prefix from that overlay. Sender names, rank icons and messages remain available. Existing overlays inherit the global channel-name preference until you change this checkbox. **Style → Text Size → Small** works with every offered font, including bold styles.
 
@@ -74,7 +74,7 @@ Each overlay can independently control:
 - X/Y offsets for player-attached overlays;
 - text size, font, alignment, bold styling, and width;
 - horizontal/vertical padding inside the border, with at least 3 pixels of clearance for borders and rounded corners; full-height text rows keep letters, icons and shadows clear of the frame;
-- background color and transparency;
+- background color, optional image, and transparency;
 - border color and thickness;
 - timestamps: enable **Style → Text → Timestamps**, then choose **Timestamp style → Time ago (20m)** for ages such as `01s`, `30s`, `20m`, `02h` or `99h`. A fixed pixel column keeps messages aligned as ages update, including with proportional fonts, animated colors and session history. At 100 hours the timestamp disappears while its space remains reserved. **Clock time** keeps the existing configured time format. Each overlay saves its own choice;
 - dynamic height and always-visible behavior;
@@ -85,11 +85,13 @@ Each overlay can independently control:
 
 RuneLite's normal overlay movement system is used for free-position overlays.
 
-#### RGB animation (Beta)
+#### Colors and animation
 
-In each overlay's **Style → Frame**, enable **Border** and **RGB border (Beta)** for a rainbow that travels around the perimeter. Under **Effects**, **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **Cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
+Each overlay's **Colors** tab contains its text, timestamp, border, background, and **Specific Message Highlighting** controls. Text, timestamps, and borders independently offer **Static color**, **Duo Cycle**, **Duo Wave**, **RGB cycle**, and **RGB wave**. Duo Cycle blends between two chosen colors; Duo Wave moves a two-color gradient across the text or around the border. RGB modes use the full spectrum. Each control has its own cycle duration and optional **Pulse**, with a separate fade timer.
 
-Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Allow rule overrides** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview** while logged in to try the effects. These Beta effects still need live gameplay feedback.
+Timestamp colors are independent of message text. Static text can use message colors, the channel palette, or one custom color. **Specific Message Highlighting → Allow rule overrides** lets matching rules override the message body. Icons retain their original colors. Existing settings keep their colors and animation choices, including saved RGB Static effects. Use **Preview** while logged in to try the appearance.
+
+In **Colors → Background**, choose a PNG or JPEG image to fill the overlay. Images are centered and cropped to fit, follow rounded corners, and use the existing **Opacity (%)** setting. **Remove image** returns to the background color. Images are copied into the plugin's local storage, so moving the original file does not break the background. Choose the image again when moving settings to another computer. Files must be at most 10 MB and 8 million pixels; large images are resized for display.
 
 > Earlier overlay list and editor, before the current list-and-tabs layout. The settings instructions above describe the current release.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
@@ -153,11 +155,11 @@ Native offline status adds an icon; native name colors remain under RuneLite Cha
 
 Improved Chat and Overlays can use RuneLite Chat Color as its baseline color source or configured fallback colors for game, public, private, friends, clan, guest clan, Group Ironman, trade, challenge, broadcast, autochat, and other supported message types.
 
-Open **Style → Text colors → Color palette**. **RuneLite (automatic)** follows the current chatbox mode; **RuneLite transparent** and **RuneLite opaque** stay on the selected palette. The palette supplies message colors, highlights, sender names and channel labels. **Overlay palette** uses the **Palette colors** values. Keep **Retain message colors** enabled and **Text Override** off to use a palette; inactive palette controls are disabled without losing their saved choices. Explicit offline-name colors, highlight rules and RGB effects retain their configured precedence. RuneLite's own settings are read, never changed.
+Open **Colors → Text Colors**. With **Text mode → Static color**, choose **Text color source → Message colors** to retain original message colors and use the selected RuneLite palette, **Channel palette** for the overlay’s channel colors, or **Custom color** to pick one color. **Color palette → RuneLite (automatic)** follows the current chatbox mode; transparent and opaque stay fixed. RuneLite’s own settings are read, never changed.
 
 #### Message Color Rules
 
-Rules affect only the selected overlay. Open **Messages → Message highlights** to edit its definitions and nine-color palette. Native chat text uses RuneLite Chat Color.
+Rules affect only the selected overlay. Open **Colors → Specific Message Highlighting** to edit solid and RGB matching rules and the nine-color palette. **Allow rule overrides** lets matching rules take priority over the text mode. Native chat text uses RuneLite Chat Color.
 
 Use one rule per line:
 
@@ -342,7 +344,7 @@ Saved overlay lists are limited to 64 overlays and two million JSON characters, 
 
 The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanup**, **Overlay setup: side panel**, **Dialogue text**, and **Advanced**. Secondary sizing and its hotkey remain in Chatbox. Clan, guest-clan, friends-chat and GIM name controls remain independent of their instruction controls.
 
-Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
+Use the side panel for individual overlays, colors, animations, notifications and Specific Message Highlighting. Existing overlay IDs, placements, filters and notification settings are retained. Former global color rules, palettes, RGB patterns and fallback colors are copied into each existing overlay once. Saved two-color cycling becomes Duo Cycle; full-spectrum cycling remains RGB cycle. New overlays have independent defaults. Unreadable configurations keep their recovery backup and are not overwritten on startup.
 
 A one-time chatbox notice explains the rename. Collection Log keeps its native window handling.
 

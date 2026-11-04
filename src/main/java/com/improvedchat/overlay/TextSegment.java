@@ -7,6 +7,7 @@ public final class TextSegment {
     public static final int SPACER = -3;
 
     public com.improvedchat.model.AnimatedTextStyle textStyle;
+    public boolean timestamp;
     public final String text;
     public final int iconId;
     public final int width;
@@ -30,6 +31,7 @@ public final class TextSegment {
     public TextSegment copy(String text, int width, Color color) {
         TextSegment result = new TextSegment(text, iconId, width, color, underline, strikethrough, shadow);
         result.textStyle = textStyle;
+        result.timestamp = timestamp;
         return result;
     }
 }

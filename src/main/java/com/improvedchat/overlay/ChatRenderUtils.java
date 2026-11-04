@@ -275,7 +275,13 @@ public final class ChatRenderUtils {
                 ts += " ";
                 int width = metrics.stringWidth(ts);
                 Color tsColor = retainContextualColours ? Color.WHITE : textColor;
-                headerSegments.add(new TextSegment(ts, -1, width, tsColor));
+                if (overlay != null && overlay.isTimestampColorOverride()) tsColor = overlay.getTimestampColors().getPrimary();
+                List<TextSegment> timestampSegments = new ArrayList<>();
+                timestampSegments.add(new TextSegment(ts, -1, width, tsColor));
+                if (overlay != null && overlay.getTimestampColors().getMode() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC)
+                    timestampSegments = rainbowSegments(timestampSegments, overlay.getTextSettings().rainbowStyle(), metrics, new int[]{0});
+                for (TextSegment segment : timestampSegments) segment.timestamp = true;
+                headerSegments.addAll(timestampSegments);
                 headerWidth += width;
             }
             if (relative) {
@@ -696,7 +702,7 @@ public final class ChatRenderUtils {
         List<TextSegment> out = new ArrayList<>();
         int colorIndex = colorIndexRef[0];
         for (TextSegment seg : input) {
-            if (seg.iconId >= 0 || seg.iconId == TextSegment.LINE_BREAK || seg.iconId == TextSegment.SPACER) {
+            if (seg.timestamp || seg.iconId >= 0 || seg.iconId == TextSegment.LINE_BREAK || seg.iconId == TextSegment.SPACER) {
                 out.add(seg);
                 continue;
             }

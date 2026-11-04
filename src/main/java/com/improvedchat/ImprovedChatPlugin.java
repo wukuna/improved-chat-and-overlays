@@ -80,6 +80,7 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
         name = "Improved Chat and Overlays",
         configName = "improvedchat",
+        internalName = "improved-chat",
         description = "Create filtered chat overlays with custom styles, RGB effects and alerts. Resize or collapse the chatbox, tidy messages and improve dialogue readability.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
@@ -158,6 +159,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     private Client client;
     @Inject private Notifier notifier;
     @Inject private RuneLiteConfig runeLiteConfig;
+    @Inject private java.util.concurrent.ScheduledExecutorService executor;
+    private final com.improvedchat.overlay.OverlayBackgroundImages backgroundImages = new com.improvedchat.overlay.OverlayBackgroundImages();
+    private final Map<OverlayConfig, Object> backgroundRequests = new ConcurrentHashMap<>();
+    private final Map<OverlayConfig, String> backgroundErrors = new ConcurrentHashMap<>();
 
     @Inject
     private ImprovedChatConfig config;
@@ -306,6 +311,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Subscribe public void onProfileChanged(net.runelite.client.events.ProfileChanged event) {
         visibilityHotkeys.reset();
+        backgroundImages.clear();
+        backgroundRequests.clear();
+        backgroundErrors.clear();
         long generation = ++nativeChatGeneration;
         clientThread.invokeLater(() -> {
             if (!nativeChatActive || generation != nativeChatGeneration) return;
@@ -384,6 +392,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         nativeChatBackgroundOverlay.shutDown();
         nativeChatActive = false;
         nativeChatGeneration++;
+        backgroundImages.clear();
+        backgroundRequests.clear();
+        backgroundErrors.clear();
         releaseNoticeModule.shutDown();
         dialogueFontsModule.shutDown();
         offlineChatStatusModule.shutDown();
@@ -424,6 +435,58 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         return overlayConfigs;
     }
 
+    private net.runelite.client.util.Filepath backgroundDirectory() throws java.io.IOException {
+        return getPluginDirectory().joinSegment("backgrounds");
+    }
+
+    public BufferedImage getOverlayBackground(OverlayConfig overlay) {
+        return backgroundImages.get(overlay.getBackgroundImage(), this::backgroundDirectory, executor, this::refreshPanel);
+    }
+
+    public boolean isBackgroundImageLoading() { return backgroundImages.isImporting(); }
+
+    public String getBackgroundImageStatus(OverlayConfig overlay) {
+        String error = backgroundErrors.get(overlay);
+        return error != null ? error : backgroundImages.status(overlay.getBackgroundImage());
+    }
+
+    public void chooseOverlayBackground(java.awt.Component owner, OverlayConfig overlay) {
+        if (!nativeChatActive || backgroundImages.isImporting() || !overlayConfigs.contains(overlay)) return;
+        long generation = nativeChatGeneration;
+        List<net.runelite.client.util.Filepath> files = new net.runelite.client.util.Filepath.Chooser()
+                .setIsOpen().setAcceptsFiles().setDialogTitle("Choose overlay background")
+                .addExtensionFilter("PNG or JPEG images", "png", "jpg", "jpeg").showDialog(owner);
+        if (files == null || files.isEmpty() || !nativeChatActive || generation != nativeChatGeneration
+                || !overlayConfigs.contains(overlay)) return;
+        Object request = new Object();
+        backgroundRequests.put(overlay, request);
+        backgroundErrors.remove(overlay);
+        net.runelite.client.util.Filepath selected = files.get(0);
+        backgroundImages.importImage(selected, this::backgroundDirectory, executor, result -> {
+            if (!backgroundRequests.remove(overlay, request) || !nativeChatActive || generation != nativeChatGeneration
+                    || !overlayConfigs.contains(overlay)) {
+                refreshPanel();
+                return;
+            }
+            if (result.error != null) backgroundErrors.put(overlay, result.error);
+            else {
+                overlay.setBackgroundImage(result.name, selected.getFileName());
+                overlay.setBackgroundEnabled(true);
+                onOverlayConfigChanged();
+            }
+            refreshPanel();
+        });
+        refreshPanel();
+    }
+
+    public void removeOverlayBackground(OverlayConfig overlay) {
+        backgroundRequests.remove(overlay);
+        backgroundErrors.remove(overlay);
+        overlay.setBackgroundImage(null, null);
+        onOverlayConfigChanged();
+        refreshPanel();
+    }
+
     public void addNewOverlay() {
         addConfiguredOverlay(new OverlayConfig());
     }
@@ -445,6 +508,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     public void removeOverlay(OverlayConfig oc) {
         overlayConfigs.remove(oc);
+        backgroundRequests.remove(oc);
+        backgroundErrors.remove(oc);
+        backgroundImages.retain(overlayConfigs.stream().map(OverlayConfig::getBackgroundImage).collect(java.util.stream.Collectors.toSet()));
         overlayMessageFilters.remove(oc.getId());
         clearedThrough.remove(oc.getId());
         DynamicChatOverlay toRemove = null;
@@ -466,6 +532,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     public void resetOverlays() {
+        backgroundImages.clear();
+        backgroundRequests.clear();
+        backgroundErrors.clear();
         overlayPersistenceBlocked = false;
         configRecoveryMessage = null;
         for (DynamicChatOverlay overlay : overlays) {
@@ -491,6 +560,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     public void onOverlayConfigChanged() {
+        backgroundImages.retain(overlayConfigs.stream().map(OverlayConfig::getBackgroundImage).collect(java.util.stream.Collectors.toSet()));
         saveOverlayConfigs();
         updatePmWidgetVisibility();
         for (DynamicChatOverlay overlay : overlays) {
@@ -533,6 +603,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void loadOverlayConfigs() {
+        backgroundImages.clear();
         overlayConfigs.clear();
         configRecoveryMessage = null;
         overlayPersistenceBlocked = false;

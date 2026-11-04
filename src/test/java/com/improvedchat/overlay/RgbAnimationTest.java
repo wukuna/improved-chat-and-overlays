@@ -106,7 +106,8 @@ public class RgbAnimationTest {
     }
 
     @Test public void textAnimationKeepsGlyphGeometryAndFadeAlpha() {
-        for (AnimatedTextStyle style : new AnimatedTextStyle[]{AnimatedTextStyle.RGB_CYCLE, AnimatedTextStyle.RGB_WAVE}) {
+        for (AnimatedTextStyle style : new AnimatedTextStyle[]{AnimatedTextStyle.RGB_CYCLE, AnimatedTextStyle.RGB_WAVE,
+                AnimatedTextStyle.DUO_CYCLE, AnimatedTextStyle.DUO_WAVE}) {
             OverlayConfig cfg = new OverlayConfig(); cfg.setAnimatedTextStyle(style);
             BufferedImage first = text(cfg, 0, 255), later = text(cfg, 2000, 255), faded = text(cfg, 0, 70);
             boolean colorChanged = false;

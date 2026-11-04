@@ -155,17 +155,17 @@ public class ImprovedChatPanelTest {
             combo(panel, "Timestamp style").setSelectedItem(com.improvedchat.model.TimestampStyle.TIME_AGO);
             assertEquals(com.improvedchat.model.TimestampStyle.TIME_AGO, first.getTimestampStyle());
             assertEquals(com.improvedchat.model.TimestampStyle.CLOCK_TIME, second.getTimestampStyle());
+            tabs(panel).setSelectedIndex(2);
             combo(panel, "Color palette").setSelectedItem(ChatColorSource.OPAQUE);
-            button(panel, "Text Override").doClick();
-            assertFalse(combo(panel, "Color palette").isEnabled());
-            assertFalse(button(panel, "Retain message colors").isEnabled());
-            assertTrue(button(panel, "Retain message colors").isSelected());
-            button(panel, "Text Override").doClick();
+            combo(panel, "Text color source").setSelectedItem("Custom color");
+            assertNull(combo(panel, "Color palette"));
+            combo(panel, "Text color source").setSelectedItem("Message colors");
             assertTrue(combo(panel, "Color palette").isEnabled());
             assertEquals(ChatColorSource.OPAQUE, combo(panel, "Color palette").getSelectedItem());
-            button(panel, "Retain message colors").doClick();
+            combo(panel, "Text color source").setSelectedItem("Channel palette");
             assertFalse(combo(panel, "Color palette").isEnabled());
-            button(panel, "Retain message colors").doClick();
+            combo(panel, "Text color source").setSelectedItem("Message colors");
+            tabs(panel).setSelectedIndex(1);
             editButtons(panel).get(1).doClick();
             assertTrue(button(panel, "Show channel names").isSelected());
             editButtons(panel).get(0).doClick();
@@ -178,20 +178,54 @@ public class ImprovedChatPanelTest {
         });
     }
 
-    @Test public void allMessageRgbShortcutKeepsRulesAndControlsTogether() throws Exception {
+    @Test public void colorsStayTogetherAndTargetsSaveIndependently() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            FakePlugin plugin=new FakePlugin();OverlayConfig cfg=plugin.configs.get(0);
-            cfg.getTextSettings().setRainbowEnabled(true);cfg.getTextSettings().setRainbowRules("rare drop");
-            ImprovedChatPanel panel=editingPanel(plugin);panel.setSize(225,900);tabs(panel).setSelectedIndex(1);
-            assertNotNull(button(panel,"RGB all messages").getToolTipText());
-            button(panel,"RGB all messages").doClick();
-            assertEquals(com.improvedchat.model.AnimatedTextStyle.RGB_CYCLE,cfg.getAnimatedTextStyle());
-            assertFalse(cfg.getTextSettings().isHighlightsOverrideDefaults());assertEquals("rare drop",cfg.getTextSettings().overlayRainbowRules());
-            button(panel,"RGB border (Beta)").doClick();assertTrue(cfg.isBorderEnabled());assertTrue(cfg.isRgbBorder());
-            button(panel,"FRAME").doClick();button(panel,"Rounded corners").doClick();assertTrue(cfg.isRoundedCorners());
-            assertEquals(1,tabs(panel).getSelectedIndex());assertNotNull(combo(panel,"All-message effect").getToolTipText());
-            button(panel,"TEXT").doClick();button(panel,"TEXT COLORS").doClick();button(panel,"FRAME").doClick();layout(panel);
-            try {capture(panel,"rgb-controls-narrow");} catch(Exception e) {throw new AssertionError(e);}
+            FakePlugin plugin = new FakePlugin(); OverlayConfig cfg = plugin.configs.get(0);
+            cfg.getTextSettings().setRainbowEnabled(true); cfg.getTextSettings().setRainbowRules("rare drop");
+            ImprovedChatPanel panel = editingPanel(plugin); panel.setSize(225, 900); tabs(panel).setSelectedIndex(2);
+            assertEquals("Colors", tabs(panel).getTitleAt(2));
+            combo(panel, "Text mode").setSelectedItem(com.improvedchat.model.AnimatedTextStyle.DUO_CYCLE);
+            assertEquals(com.improvedchat.model.AnimatedTextStyle.DUO_CYCLE, cfg.getTextColors().getMode());
+            assertEquals(com.improvedchat.model.AnimatedTextStyle.NORMAL, cfg.getTimestampColors().getMode());
+            button(panel, "Border").doClick();
+            combo(panel, "Border mode").setSelectedItem(com.improvedchat.model.AnimatedTextStyle.DUO_WAVE);
+            combo(panel, "Timestamp mode").setSelectedItem(com.improvedchat.model.AnimatedTextStyle.RGB_CYCLE);
+            button(panel, "Pulse timestamp").doClick();
+            assertTrue(cfg.getTimestampColors().isPulse());
+            assertFalse(cfg.getTextColors().isPulse()); assertFalse(cfg.getBorderColors().isPulse());
+            assertEquals(5, combo(panel, "Border mode").getItemCount());
+            assertEquals(5, combo(panel, "Text mode").getItemCount());
+            assertEquals(5, combo(panel, "Timestamp mode").getItemCount());
+            assertEquals("rare drop", cfg.getTextSettings().overlayRainbowRules());
+            assertTrue(SwingUtilities.isDescendingFrom(combo(panel, "Border mode"), tabs(panel).getComponentAt(2)));
+            assertTrue(SwingUtilities.isDescendingFrom(combo(panel, "Timestamp mode"), tabs(panel).getComponentAt(2)));
+            assertTrue(SwingUtilities.isDescendingFrom(button(panel, "Specific Message Highlighting"), tabs(panel).getComponentAt(2)));
+            assertNull(findButton(editor(panel), "RGB all messages"));
+            assertNull(findButton(editor(panel), "SOLID COLOR HIGHLIGHTS"));
+            assertEquals(2, tabs(panel).getSelectedIndex());
+            layout(panel);
+            try { capture(panel, "overlay-colors"); } catch (Exception e) { throw new AssertionError(e); }
+        });
+    }
+
+    @Test public void imageControlsShareTheBackgroundSectionAndRemoveKeepsOpacity() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            FakePlugin plugin = new FakePlugin(); OverlayConfig cfg = plugin.configs.get(0);
+            cfg.setBackgroundColour(new java.awt.Color(10, 20, 30, 128));
+            cfg.setBackgroundImage("12345678-1234-1234-1234-123456789abc.png", "My background.png");
+            ImprovedChatPanel panel = editingPanel(plugin); panel.setSize(225, 900);
+            tabs(panel).setSelectedIndex(2);
+            button(panel, "TEXT COLORS").doClick(); button(panel, "TIMESTAMP COLORS").doClick();
+            button(panel, "BACKGROUND").doClick();
+            assertTrue(SwingUtilities.isDescendingFrom(button(panel, "Replace image"), tabs(panel).getComponentAt(2)));
+            assertTrue(button(panel, "Remove image").isEnabled());
+            layout(panel);
+            try { capture(panel, "overlay-background"); } catch (Exception e) { throw new AssertionError(e); }
+            button(panel, "Remove image").doClick(); panel.rebuild();
+            assertEquals("", cfg.getBackgroundImage());
+            assertEquals(128, cfg.getBackgroundColour().getAlpha());
+            assertTrue(button(panel, "Choose image").isEnabled());
+            assertNull(findButton(editor(panel), "Remove image"));
         });
     }
 
@@ -240,7 +274,7 @@ public class ImprovedChatPanelTest {
             try {
                 FakePlugin plugin=new FakePlugin(); OverlayConfig second=new OverlayConfig(); plugin.configs.add(second);
                 ImprovedChatPanel panel=editingPanel(plugin); panel.setSize(280,900);
-                editButtons(panel).get(0).doClick(); tabs(panel).setSelectedIndex(2);
+                editButtons(panel).get(0).doClick(); tabs(panel).setSelectedIndex(3);
                 button(panel,"Enable Notifications").doClick();
                 assertTrue(plugin.configs.get(0).getNotification().isEnabled()); assertFalse(second.getNotification().isEnabled());
                 button(panel,"Customize Notification").doClick();
@@ -260,21 +294,22 @@ public class ImprovedChatPanelTest {
             FakePlugin plugin = new FakePlugin();
             ImprovedChatPanel panel = editingPanel(plugin);
             panel.setSize(225, 900); layout(panel);
-            assertEquals(3, tabs(panel).getTabCount());
+            assertEquals(4, tabs(panel).getTabCount());
             assertEquals("Messages", tabs(panel).getTitleAt(0));
             assertEquals("Style", tabs(panel).getTitleAt(1));
-            assertEquals("Alerts", tabs(panel).getTitleAt(2));
+            assertEquals("Colors", tabs(panel).getTitleAt(2));
+            assertEquals("Alerts", tabs(panel).getTitleAt(3));
             javax.swing.JTextField name = namedField(panel, "Name");
             name.setText("Renamed without pressing Enter");
             assertEquals("Renamed without pressing Enter", plugin.configs.get(0).getName());
             assertTrue(plugin.saves > 0);
-            tabs(panel).setSelectedIndex(1);
+            tabs(panel).setSelectedIndex(2);
             button(panel, "Background").doClick();
-            assertEquals(1, tabs(panel).getSelectedIndex());
+            assertEquals(2, tabs(panel).getSelectedIndex());
             assertTrue(plugin.configs.get(0).isBackgroundEnabled());
             assertFalse(button(panel, "Use RuneLite Chat Filter").isShowing());
             panel.rebuild();
-            assertEquals(1, tabs(panel).getSelectedIndex());
+            assertEquals(2, tabs(panel).getSelectedIndex());
         });
     }
 
@@ -283,11 +318,12 @@ public class ImprovedChatPanelTest {
             FakePlugin plugin = new FakePlugin();
             ImprovedChatPanel panel = editingPanel(plugin);
             panel.setSize(225, 650); layout(panel);
+            tabs(panel).setSelectedIndex(2);
             int before = tabs(panel).getPreferredSize().height;
-            button(panel, "SOLID COLOR HIGHLIGHTS").doClick();
+            button(panel, "Specific Message Highlighting").doClick();
             layout(panel);
             assertTrue(tabs(panel).getPreferredSize().height > before);
-            assertEquals(0, tabs(panel).getSelectedIndex());
+            assertEquals(2, tabs(panel).getSelectedIndex());
         });
     }
 

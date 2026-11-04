@@ -72,18 +72,22 @@ public final class AttentionEngine {
         } else if (!cfg.isBorderEnabled()) {
             return;
         }
+        OverlayColorSettings colors = cfg.getBorderColors();
+        alpha = colors.pulseAlpha(alpha, now);
 
         int px = cfg.getBorderThickness().getPixels();
         int inset = Math.max(0, px / 2);
         Paint oldPaint = g.getPaint();
         Stroke oldStroke = g.getStroke();
         try {
-            g.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), Math.max(0, Math.min(255, alpha))));
+            g.setColor(RgbAnimation.cycleColor(colors, colors.getMode(), now, alpha));
             g.setStroke(new BasicStroke(px));
             int borderWidth = Math.max(0, width - 1 - inset * 2);
             int borderHeight = Math.max(0, height - 1 - inset * 2);
-            if (cfg.isRgbBorder() && borderWidth > 0 && borderHeight > 0) {
-                RgbAnimation.drawBorder(g, inset, borderWidth, borderHeight, alpha, now, cfg.getRgbCycleSeconds(), cfg.isRoundedCorners());
+            if ((colors.getMode() == com.improvedchat.model.AnimatedTextStyle.RGB_WAVE
+                    || colors.getMode() == com.improvedchat.model.AnimatedTextStyle.DUO_WAVE)
+                    && borderWidth > 0 && borderHeight > 0) {
+                RgbAnimation.drawBorder(g, inset, borderWidth, borderHeight, alpha, now, colors.getCycleSeconds(), cfg.isRoundedCorners(), colors);
             } else {
                 if (cfg.isRoundedCorners()) g.drawRoundRect(inset, inset, borderWidth, borderHeight, 16, 16);
                 else g.drawRect(inset, inset, borderWidth, borderHeight);

@@ -1,7 +1,8 @@
 package com.improvedchat.model;
 
 public enum AnimatedTextStyle {
-    NORMAL("Solid / channel colors"), RGB_STATIC("RGB Static"), RGB_CYCLE("RGB Cycling (Beta)"), RGB_WAVE("RGB Wave (Beta)");
+    NORMAL("Static color"), DUO_CYCLE("Duo Cycle"), DUO_WAVE("Duo Wave"),
+    RGB_CYCLE("RGB cycle"), RGB_WAVE("RGB wave"), RGB_STATIC("RGB Static");
 
     private final String label;
 

@@ -18,16 +18,14 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-02-chat-wheel-fix";
+    static final String RELEASE = "2026-11-03-overlay-colors";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] UPDATES = {
-        "Fixed camera zoom with the chatbox open and overlay history enabled.",
-        "Rounded chatbox backgrounds now follow their borders.",
-        "Removed the overlay history instruction footer.",
-        "Added overlay toggle hotkeys, including shared keys for multiple overlays.",
-        "Added a separate hotkey to hide the entire chatbox and its buttons.",
-        "Elapsed timestamps now stay aligned through 99h and disappear at 100h.",
-        "Chat overlays now stay behind game windows, including the bank and bank PIN screen.",
+        "Overlay colors now share one Colors tab.",
+        "Added Static color, Duo Cycle, Duo Wave, RGB cycle and RGB wave for borders, text and timestamps.",
+        "Added independent Pulse effects and timers for each color control.",
+        "Renamed message color highlights to Specific Message Highlighting.",
+        "Added optional background images with adjustable opacity.",
     };
 
     @Inject private Client client;
