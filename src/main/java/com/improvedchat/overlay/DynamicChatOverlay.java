@@ -48,6 +48,7 @@ public class DynamicChatOverlay extends Overlay {
     private OverlayConfig overlayConfig;
     private PlacementMode appliedPlacementMode;
     private final OverlayScrollback scrollback = new OverlayScrollback();
+    private final OverlayLayoutCache layoutCache = new OverlayLayoutCache();
     private static final java.util.concurrent.atomic.AtomicLong PAINT_ORDER = new java.util.concurrent.atomic.AtomicLong();
     private volatile long scrollPaintOrder;
     private volatile java.awt.Rectangle scrollBounds = new java.awt.Rectangle();
@@ -107,6 +108,7 @@ public class DynamicChatOverlay extends Overlay {
     }
 
     public void setOverlayConfig(OverlayConfig overlayConfig) {
+        layoutCache.clear();
         if (!overlayConfig.isShow()) previewUntil = 0;
         this.overlayConfig = overlayConfig;
         scrollBounds = new java.awt.Rectangle();
@@ -284,10 +286,24 @@ public class DynamicChatOverlay extends Overlay {
             boolean wrapText, com.improvedchat.ChatColorSource colorSource) {
         Color inherited = getCategoryColour(msg.getType());
         Color msgColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
+        ClanChatPresentationService.Presentation presentation = clanPresentationService.resolve(msg.getSender(), msg.getType());
+        Object key = java.util.Arrays.asList(msg, msg.getCount(), metrics.getFont(), metrics.getFontRenderContext(),
+                fontSize, modIcons, contentWidth, wrapText, msgColor, colorSource, plugin.getRenderRevision(),
+                globalConfig.timestampFormat(), globalConfig.showChannelName(),
+                overlayConfig.isShowTimestamp() && overlayConfig.getTimestampStyle() == com.improvedchat.model.TimestampStyle.TIME_AGO
+                        ? ChatRenderUtils.formatTimeAgo(msg.getTimestamp(), currentTime) : null,
+                presentation.isClanMessage(), presentation.isOffline(), presentation.getRankIconId(), presentation.getOfflineIconId());
+        int alpha = AttentionEngine.adjustAlpha(msg, currentTime, ChatRenderUtils.calculateAlpha(msg, currentTime, fadeOutMs));
+        return layoutCache.layout(msg.getSequence(), key, alpha, () -> buildMessageLines(msg, metrics, fontSize,
+                modIcons, contentWidth, currentTime, wrapText, colorSource, msgColor, presentation));
+    }
+
+    private List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics, FontSize fontSize,
+            IndexedSprite[] modIcons, int contentWidth, long currentTime, boolean wrapText,
+            com.improvedchat.ChatColorSource colorSource, Color msgColor,
+            ClanChatPresentationService.Presentation clanPresentation) {
         List<TextSegment> senderDecorations = new ArrayList<>();
         Color senderColorOverride = null;
-        ClanChatPresentationService.Presentation clanPresentation =
-                clanPresentationService.resolve(msg.getSender(), msg.getType());
 
         if (clanPresentation.isClanMessage()) {
             if (overlayConfig.isShowClanRankIcons()
@@ -317,7 +333,7 @@ public class DynamicChatOverlay extends Overlay {
                 metrics,
                 contentWidth,
                 currentTime,
-                fadeOutMs,
+                0,
                 wrapText,
                 msgColor,
                 overlayConfig.isContextualColours(),

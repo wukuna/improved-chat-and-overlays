@@ -8,6 +8,8 @@ public final class OverlayMessage {
     private final long sequence;
     private long firstSequence;
     private final String message;
+    private String comparisonText;
+    private static final java.util.regex.Pattern COLOR_TAG = java.util.regex.Pattern.compile("</?col[^>]*>");
     private final long timestamp;
     private final ChatMessageType type;
     private final boolean bossKc;
@@ -74,6 +76,10 @@ public final class OverlayMessage {
     }
 
     public String getMessage() { return message; }
+    public String getComparisonText() {
+        if (comparisonText == null) comparisonText = message == null ? "" : COLOR_TAG.matcher(message).replaceAll("");
+        return comparisonText;
+    }
     public long getTimestamp() { return timestamp; }
     public ChatMessageType getType() { return type; }
     public boolean isBossKc() { return bossKc; }

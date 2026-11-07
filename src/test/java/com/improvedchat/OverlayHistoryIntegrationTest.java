@@ -56,6 +56,35 @@ public class OverlayHistoryIntegrationTest {
         assertEquals(3, plugin.getMessagesForOverlay(b).size());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test public void unchangedFramesReuseSelectionAndEditsFiltersAndClearsInvalidateIt() throws Exception {
+        TestPlugin plugin = new TestPlugin();
+        Field configField = ImprovedChatPlugin.class.getDeclaredField("config");
+        configField.setAccessible(true);
+        configField.set(plugin, new ImprovedChatConfig() {});
+        Field historyField = ImprovedChatPlugin.class.getDeclaredField("messages");
+        historyField.setAccessible(true);
+        List<OverlayMessage> history = (List<OverlayMessage>) historyField.get(plugin);
+        OverlayConfig overlay = OverlayConfig.createDefault("Cache", EnumSet.of(ChatMessageType.PUBLICCHAT), true);
+        overlay.setFadeOutDuration(0);
+        history.add(chat("first"));
+        List<OverlayMessage> first = plugin.getMessagesForOverlay(overlay);
+        assertSame(first, plugin.getMessagesForOverlay(overlay));
+        history.set(0, history.get(0).withBody("rewritten"));
+        List<OverlayMessage> rewritten = plugin.getMessagesForOverlay(overlay);
+        assertNotSame(first, rewritten);
+        assertEquals("rewritten", rewritten.get(0).getMessage());
+        overlay.setFilterMode(OverlayFilterMode.SHOW_ONLY_MATCHES);
+        overlay.setFilteredWords("missing");
+        assertTrue(plugin.getMessagesForOverlay(overlay).isEmpty());
+        overlay.setFilteredWords("rewritten");
+        assertEquals(1, plugin.getMessagesForOverlay(overlay).size());
+        plugin.clearAllMessages();
+        assertTrue(plugin.getMessagesForOverlay(overlay).isEmpty());
+        history.add(chat("rewritten"));
+        assertEquals(1, plugin.getMessagesForOverlay(overlay).size());
+    }
+
     private OverlayMessage chat(String text) {
         return OverlayMessage.senderMessage("Alice", null, text, System.currentTimeMillis(), ChatMessageType.PUBLICCHAT, false);
     }

@@ -7,24 +7,33 @@ import java.util.Objects;
 import net.runelite.api.ChatMessageType;
 
 public final class OverlayHistory {
-    private static final java.util.regex.Pattern COLOR_TAG = java.util.regex.Pattern.compile("</?col[^>]*>");
     private OverlayHistory() { }
 
     public static List<OverlayMessage> select(List<OverlayMessage> history, long clearedThrough,
             int limit, boolean collapse) {
+        return select(history, clearedThrough, limit, collapse, message -> true);
+    }
+
+    public static List<OverlayMessage> select(List<OverlayMessage> history, long clearedThrough,
+            int limit, boolean collapse, java.util.function.Predicate<OverlayMessage> include) {
         List<OverlayMessage> result = new ArrayList<>();
-        for (OverlayMessage message : history) {
-            if (message.getSequence() <= clearedThrough) continue;
+        if (limit <= 0) return result;
+        for (int i = history.size() - 1; i >= 0; i--) {
+            OverlayMessage message = history.get(i);
+            if (message.getSequence() <= clearedThrough || !include.test(message)) continue;
             if (collapse && !result.isEmpty()) {
-                OverlayMessage previous = result.get(result.size() - 1);
-                if (sameMessage(previous, message)) {
-                    result.set(result.size() - 1, message.groupedWith(previous));
+                OverlayMessage newer = result.get(result.size() - 1);
+                if (sameMessage(newer, message)) {
+                    result.set(result.size() - 1, newer.groupedWith(message));
                     continue;
                 }
             }
+            if (result.size() == limit) break;
             result.add(message);
+            if (!collapse && result.size() == limit) break;
         }
-        return new ArrayList<>(result.subList(Math.max(0, result.size() - limit), result.size()));
+        java.util.Collections.reverse(result);
+        return result;
     }
 
     private static boolean sameMessage(OverlayMessage a, OverlayMessage b) {
@@ -33,10 +42,7 @@ public final class OverlayHistory {
                 && a.isOutgoing() == b.isOutgoing()
                 && Objects.equals(a.getSender(), b.getSender())
                 && Objects.equals(a.getChannelName(), b.getChannelName())
-                && stripColors(a.getMessage()).equals(stripColors(b.getMessage()));
+                && a.getComparisonText().equals(b.getComparisonText());
     }
 
-    private static String stripColors(String text) {
-        return text == null ? "" : COLOR_TAG.matcher(text).replaceAll("");
-    }
 }

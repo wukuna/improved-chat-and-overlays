@@ -225,7 +225,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Inject private net.runelite.client.input.MouseManager mouseManager;
 
-    private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
+    private final com.improvedchat.overlay.OverlayMessageStore messages = new com.improvedchat.overlay.OverlayMessageStore();
+    private final Map<String, com.improvedchat.overlay.OverlaySelectionCache> selectionCaches = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong renderRevision = new java.util.concurrent.atomic.AtomicLong();
+    public long getRenderRevision() { return renderRevision.get(); }
 
     private final ChatMessageFilter chatMessageFilter = new ChatMessageFilter();
     private Plugin chatFilterPlugin;
@@ -321,6 +324,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             for (DynamicChatOverlay overlay : overlays) overlayManager.remove(overlay);
             overlays.clear();
             overlayMessageFilters.clear();
+        selectionCaches.clear();
             clearedThrough.clear();
             loadOverlayConfigs();
             for (OverlayConfig overlay : overlayConfigs) addOverlay(overlay);
@@ -409,6 +413,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         }
         overlays.clear();
         overlayMessageFilters.clear();
+        selectionCaches.clear();
         clearedThrough.clear();
         pendingUpdates.clear();
         messages.clear();
@@ -512,6 +517,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         backgroundErrors.remove(oc);
         backgroundImages.retain(overlayConfigs.stream().map(OverlayConfig::getBackgroundImage).collect(java.util.stream.Collectors.toSet()));
         overlayMessageFilters.remove(oc.getId());
+        selectionCaches.remove(oc.getId() + ":history");
+        selectionCaches.remove(oc.getId() + ":visible");
         clearedThrough.remove(oc.getId());
         DynamicChatOverlay toRemove = null;
         for (DynamicChatOverlay overlay : overlays) {
@@ -543,6 +550,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         overlays.clear();
         overlayConfigs.clear();
         overlayMessageFilters.clear();
+        selectionCaches.clear();
         clearedThrough.clear();
 
         overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
@@ -560,6 +568,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     public void onOverlayConfigChanged() {
+        renderRevision.incrementAndGet();
         backgroundImages.retain(overlayConfigs.stream().map(OverlayConfig::getBackgroundImage).collect(java.util.stream.Collectors.toSet()));
         saveOverlayConfigs();
         updatePmWidgetVisibility();
@@ -1049,6 +1058,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Subscribe(priority = 100f)
     public void onConfigChanged(ConfigChanged event) {
+        renderRevision.incrementAndGet();
         if (modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())) {
             if (modernChatCompatibility.isModernChatActive()) {
                 suspendForModernChatConfigTransition(event.getKey());
@@ -1114,6 +1124,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void rebuildChatFilter() {
+        renderRevision.incrementAndGet();
         chatMessageFilter.rebuild(configManager.getConfig(ChatFilterConfig.class));
     }
 
@@ -1206,43 +1217,35 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
                         overlayConfig.getId(), key -> new OverlayMessageFilter());
 
         int maxMessages = history ? overlayConfig.getHistoryLimit() : overlayConfig.getMaxMessages();
-        List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
-
-        for (OverlayMessage msg : messages) {
-
-            if (!types.contains(msg.getType())) {
-                continue;
-            }
-
+        List<OverlayMessage> source = messages.snapshot();
+        long boundary = clearedThrough.getOrDefault(overlayConfig.getId(), 0L);
+        Object key = java.util.Arrays.asList(new java.util.HashSet<>(types), fadeOutDuration,
+                gameFilterEnabled, bossKcFilterEnabled, useGlobalChatFilter, globalChatFilterActive,
+                maxMessages, config.collapseDuplicates(), boundary, renderRevision.get(),
+                overlayConfig.getFilterMode(), overlayConfig.getFilteredWords(),
+                overlayConfig.getFilteredRegex(), overlayConfig.getFilteredNames());
+        com.improvedchat.overlay.OverlaySelectionCache cache = selectionCaches.computeIfAbsent(
+                overlayConfig.getId() + (history ? ":history" : ":visible"),
+                id -> new com.improvedchat.overlay.OverlaySelectionCache());
+        List<OverlayMessage> cached = cache.get(source, key, currentTime);
+        if (cached != null) return cached;
+        long[] expiresAt = {Long.MAX_VALUE};
+        List<OverlayMessage> selected = OverlayHistory.select(source, boundary, maxMessages,
+                config.collapseDuplicates(), msg -> {
+            if (!types.contains(msg.getType())) return false;
             if (fadeOutThreshold > 0) {
                 int msgMaxFade = msg.getMaxFadeSeconds();
                 long threshold = msgMaxFade > 0 ? (msgMaxFade * 1000L) + 2000 : fadeOutThreshold;
-                if (currentTime - msg.getTimestamp() >= threshold) {
-                    continue;
-                }
+                long expiry = msg.getTimestamp() + threshold;
+                if (currentTime >= expiry) return false;
+                expiresAt[0] = Math.min(expiresAt[0], expiry);
             }
-
-            if (gameFilterEnabled && msg.getType() == ChatMessageType.SPAM) {
-                continue;
-            }
-
-            if (bossKcFilterEnabled && msg.isBossKc()) {
-                continue;
-            }
-
-            if (globalChatFilterActive && chatMessageFilter.matches(msg.getMessage())) {
-                continue;
-            }
-
-            if (overlayFilter != null && overlayFilter.shouldExclude(overlayConfig, msg)) {
-                continue;
-            }
-
-            filtered.add(msg);
-        }
-
-        return OverlayHistory.select(filtered, clearedThrough.getOrDefault(overlayConfig.getId(), 0L),
-                maxMessages, config.collapseDuplicates());
+            if (gameFilterEnabled && msg.getType() == ChatMessageType.SPAM) return false;
+            if (bossKcFilterEnabled && msg.isBossKc()) return false;
+            if (globalChatFilterActive && chatMessageFilter.matches(msg.getMessage())) return false;
+            return overlayFilter == null || !overlayFilter.shouldExclude(overlayConfig, msg);
+        });
+        return cache.put(source, key, currentTime, expiresAt[0], selected);
     }
 
     public void clearMessagesForTypes(Set<ChatMessageType> types) {

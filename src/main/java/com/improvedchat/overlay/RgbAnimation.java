@@ -12,6 +12,46 @@ import java.awt.geom.Point2D;
 public final class RgbAnimation {
     private static final float[] STOPS = {0f, 1f / 6, 2f / 6, 3f / 6, 4f / 6, 5f / 6, 1f};
 
+    private static final java.util.Map<java.awt.Rectangle, BorderPath> BORDER_PATHS =
+            new java.util.LinkedHashMap<java.awt.Rectangle, BorderPath>(16, .75f, true) {
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<java.awt.Rectangle, BorderPath> eldest) {
+            return size() > 32;
+        }
+    };
+
+    private static synchronized BorderPath borderPath(int inset, int width, int height) {
+        return BORDER_PATHS.computeIfAbsent(new java.awt.Rectangle(inset, inset, width, height), BorderPath::new);
+    }
+
+    private static final class BorderPath {
+        private final java.util.List<java.awt.geom.Line2D.Double> lines = new java.util.ArrayList<>();
+        private final java.util.List<Double> lengths = new java.util.ArrayList<>();
+        private double length;
+
+        private BorderPath(java.awt.Rectangle bounds) {
+            java.awt.geom.PathIterator path = new java.awt.geom.RoundRectangle2D.Double(
+                    bounds.x, bounds.y, bounds.width, bounds.height, 16, 16).getPathIterator(null, .3);
+            double[] coords = new double[6];
+            Point2D.Double first = null, previous = null;
+            while (!path.isDone()) {
+                int kind = path.currentSegment(coords);
+                Point2D.Double point = kind == java.awt.geom.PathIterator.SEG_CLOSE ? first
+                        : new Point2D.Double(coords[0], coords[1]);
+                if (previous != null && kind != java.awt.geom.PathIterator.SEG_MOVETO) {
+                    double distance = previous.distance(point);
+                    if (distance > 0) {
+                        lines.add(new java.awt.geom.Line2D.Double(previous, point));
+                        lengths.add(distance);
+                        length += distance;
+                    }
+                }
+                if (kind == java.awt.geom.PathIterator.SEG_MOVETO) first = point;
+                previous = point;
+                path.next();
+            }
+        }
+    }
+
     private RgbAnimation() { }
 
     static double phase(long now, int seconds) {
@@ -51,21 +91,15 @@ public final class RgbAnimation {
             int seconds, boolean rounded, OverlayColorSettings settings) {
         if (width <= 0 || height <= 0) return;
         if (rounded) {
-            java.awt.geom.PathIterator path = new java.awt.geom.RoundRectangle2D.Double(inset,inset,width,height,16,16).getPathIterator(null,.3);
-            java.util.List<Point2D.Double> points = new java.util.ArrayList<>();
-            double[] coords = new double[6];
-            while (!path.isDone()) {
-                int kind=path.currentSegment(coords);
-                if(kind==java.awt.geom.PathIterator.SEG_MOVETO || kind==java.awt.geom.PathIterator.SEG_LINETO)points.add(new Point2D.Double(coords[0],coords[1]));
-                else if(kind==java.awt.geom.PathIterator.SEG_CLOSE && !points.isEmpty())points.add(points.get(0));
-                path.next();
-            }
-            double length=0;for(int i=1;i<points.size();i++)length+=points.get(i-1).distance(points.get(i));
-            double distance=0,phase=phase(now,seconds);
-            for(int i=1;i<points.size();i++) {
-                Point2D.Double a=points.get(i-1),b=points.get(i);double segment=a.distance(b);if(segment==0)continue;
-                g.setPaint(gradient(a.x,a.y,(b.x-a.x)/segment,(b.y-a.y)/segment,length,distance,phase,alpha,settings));
-                g.draw(new java.awt.geom.Line2D.Double(a,b));distance+=segment;
+            BorderPath path = borderPath(inset, width, height);
+            double distance = 0, phase = phase(now, seconds);
+            for (int i = 0; i < path.lines.size(); i++) {
+                java.awt.geom.Line2D.Double line = path.lines.get(i);
+                double segment = path.lengths.get(i);
+                g.setPaint(gradient(line.x1, line.y1, (line.x2 - line.x1) / segment,
+                        (line.y2 - line.y1) / segment, path.length, distance, phase, alpha, settings));
+                g.draw(line);
+                distance += segment;
             }
             return;
         }
