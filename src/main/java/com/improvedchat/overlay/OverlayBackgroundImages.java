@@ -5,40 +5,57 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.MemoryCacheImageInputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import javax.swing.SwingUtilities;
 import net.runelite.client.util.Filepath;
 
 public final class OverlayBackgroundImages {
-    private static final int MAX_BYTES = 10 * 1024 * 1024;
-    private static final int MAX_PIXELS = 8_000_000;
-    private static final int RENDER_PIXELS = 512 * 512;
+    private static final long MAX_CACHED_BYTES = 64L * 1024 * 1024;
+    private static final Pattern NAME = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\\.(png|gif)");
     private final Map<String, Entry> images = new HashMap<>();
+    private final ArrayDeque<Work> work = new ArrayDeque<>();
+    private final LongSupplier clock;
+    private final long maxCachedBytes;
+    private long cachedBytes;
     private long generation;
     private boolean importing;
+    private boolean working;
+
+    public OverlayBackgroundImages() { this(System::nanoTime, MAX_CACHED_BYTES); }
+
+    OverlayBackgroundImages(LongSupplier clock, long maxCachedBytes) {
+        this.clock = clock;
+        this.maxCachedBytes = maxCachedBytes;
+    }
 
     @FunctionalInterface
     public interface Directory { Filepath get() throws IOException; }
 
     public static boolean validName(String name) {
-        return name != null && name.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\\.png");
+        return name != null && NAME.matcher(name).matches();
     }
 
-    public synchronized void clear() { generation++; images.clear(); }
-    public synchronized void retain(java.util.Set<String> names) { images.keySet().retainAll(names); }
+    public synchronized void clear() { generation++; images.clear(); cachedBytes = 0; }
+    public synchronized void retain(java.util.Set<String> names) {
+        images.entrySet().removeIf(entry -> {
+            if (names.contains(entry.getKey())) return false;
+            if (entry.getValue().image != null) cachedBytes -= entry.getValue().image.bytes;
+            return true;
+        });
+    }
     public synchronized boolean isImporting() { return importing; }
     public synchronized String status(String name) {
         Entry entry = images.get(name);
@@ -46,82 +63,122 @@ public final class OverlayBackgroundImages {
     }
 
     public synchronized BufferedImage get(String name, Directory directory, Executor executor, Runnable changed) {
-        if (!validName(name)) return null;
         Entry existing = images.get(name);
-        if (existing != null) return existing.image;
+        if (existing != null) return existing.image == null ? null : existing.image.frame(clock.getAsLong() - existing.started);
+        if (!validName(name)) return null;
         if (images.size() >= OverlayConfigStore.MAX_OVERLAYS) return null;
-        Entry pending = new Entry(null, null);
+        Entry pending = new Entry(null, null, 0);
         images.put(name, pending);
         long requestGeneration = generation;
-        executor.execute(() -> {
-            Entry loaded;
+        enqueue(executor, () -> {
+            synchronized (this) {
+                if (requestGeneration != generation || images.get(name) != pending) return;
+            }
+            OverlayBackgroundImage image = null;
+            String error = null;
             try (InputStream input = directory.get().joinSegment(name).openInputStream()) {
-                loaded = new Entry(read(input), null);
+                image = OverlayBackgroundImage.read(OverlayBackgroundImage.readBytes(input));
             } catch (IOException | RuntimeException ex) {
-                loaded = new Entry(null, "Background image unavailable. Choose the image again.");
+                error = "Background image unavailable. Choose the image again.";
             }
             synchronized (this) {
                 if (requestGeneration != generation || images.get(name) != pending) return;
-                images.put(name, loaded);
+                if (image != null && cachedBytes + image.bytes > maxCachedBytes) {
+                    image = null;
+                    error = "Background memory limit reached. Remove an unused image or choose a smaller GIF.";
+                }
+                if (image != null) cachedBytes += image.bytes;
+                images.put(name, new Entry(image, error, clock.getAsLong()));
             }
-            SwingUtilities.invokeLater(changed);
+            refresh(requestGeneration, changed);
+        }, () -> {
+            synchronized (this) {
+                if (requestGeneration != generation || images.get(name) != pending) return;
+                images.put(name, new Entry(null, "Background loading unavailable. Choose the image again.", 0));
+            }
+            refresh(requestGeneration, changed);
         });
         return null;
     }
 
+    private void refresh(long requestGeneration, Runnable changed) {
+        SwingUtilities.invokeLater(() -> {
+            synchronized (this) { if (requestGeneration != generation) return; }
+            changed.run();
+        });
+    }
+
     public void importImage(Filepath selected, Directory directory, Executor executor, Consumer<Result> callback) {
+        long requestGeneration;
         synchronized (this) {
             if (importing) return;
             importing = true;
+            requestGeneration = generation;
         }
-        executor.execute(() -> {
+        enqueue(executor, () -> {
             Result result;
             try (InputStream input = selected.openInputStream()) {
-                BufferedImage image = read(input);
+                byte[] bytes = OverlayBackgroundImage.readBytes(input);
+                OverlayBackgroundImage image = OverlayBackgroundImage.read(bytes);
+                synchronized (this) {
+                    if (requestGeneration != generation) throw new IOException("Background selection cancelled.");
+                    if (cachedBytes + image.bytes > maxCachedBytes || images.size() >= OverlayConfigStore.MAX_OVERLAYS)
+                        throw new IOException("Background memory limit reached. Remove an unused image or choose a smaller GIF.");
+                }
                 Filepath folder = directory.get();
                 folder.createDirectories();
-                String name = UUID.randomUUID() + ".png";
+                String name = UUID.randomUUID() + (image.gif ? ".gif" : ".png");
                 Filepath file = folder.joinSegment(name);
-                try (OutputStream output = file.openOutputStream();
-                        MemoryCacheImageOutputStream encoded = new MemoryCacheImageOutputStream(output)) {
-                    if (!ImageIO.write(image, "png", encoded)) throw new IOException("Could not save the background image.");
+                try (OutputStream output = file.openOutputStream()) {
+                    if (image.gif) output.write(bytes);
+                    else try (MemoryCacheImageOutputStream encoded = new MemoryCacheImageOutputStream(output)) {
+                        if (!ImageIO.write(image.frame(0), "png", encoded)) throw new IOException("Could not save the background image.");
+                    }
+                }
+                synchronized (this) {
+                    if (requestGeneration != generation) throw new IOException("Background selection cancelled.");
+                    cachedBytes += image.bytes;
+                    images.put(name, new Entry(image, null, clock.getAsLong()));
                 }
                 result = new Result(name, null);
             } catch (IOException | RuntimeException ex) {
                 result = new Result(null, ex instanceof IOException ? ex.getMessage() : "Could not load this image.");
             }
-            synchronized (this) { importing = false; }
-            Result completed = result;
-            SwingUtilities.invokeLater(() -> callback.accept(completed));
-        });
+            finishImport(callback, result);
+        }, () -> finishImport(callback, new Result(null, "Background loading unavailable. Choose the image again.")));
     }
 
-    static BufferedImage read(InputStream input) throws IOException {
-        byte[] bytes = input.readNBytes(MAX_BYTES + 1);
-        if (bytes.length > MAX_BYTES) throw new IOException("Choose a PNG or JPEG image smaller than 10 MB.");
-        try (MemoryCacheImageInputStream stream = new MemoryCacheImageInputStream(new ByteArrayInputStream(bytes))) {
-            Iterator<ImageReader> readers = ImageIO.getImageReaders(stream);
-            if (!readers.hasNext()) throw new IOException("Choose a PNG or JPEG image.");
-            ImageReader reader = readers.next();
-            try {
-                String format = reader.getFormatName();
-                if (!"png".equalsIgnoreCase(format) && !"jpeg".equalsIgnoreCase(format))
-                    throw new IOException("Choose a PNG or JPEG image.");
-                reader.setInput(stream, true, true);
-                int width = reader.getWidth(0), height = reader.getHeight(0);
-                if (width < 1 || height < 1 || width > 8192 || height > 8192 || (long) width * height > MAX_PIXELS)
-                    throw new IOException("Choose an image with at most 8 million pixels and sides no longer than 8192 pixels.");
-                BufferedImage decoded = reader.read(0);
-                double scale = Math.min(1, Math.min(1024.0 / Math.max(width, height), Math.sqrt(RENDER_PIXELS / ((double) width * height))));
-                BufferedImage result = new BufferedImage(Math.max(1, (int) (width * scale)), Math.max(1, (int) (height * scale)), BufferedImage.TYPE_INT_ARGB);
-                Graphics2D graphics = result.createGraphics();
-                try {
-                    graphics.setComposite(AlphaComposite.Src);
-                    graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                    graphics.drawImage(decoded, 0, 0, result.getWidth(), result.getHeight(), null);
-                } finally { graphics.dispose(); decoded.flush(); }
-                return result;
-            } finally { reader.dispose(); }
+    private void finishImport(Consumer<Result> callback, Result result) {
+        synchronized (this) { importing = false; }
+        SwingUtilities.invokeLater(() -> callback.accept(result));
+    }
+
+    private void enqueue(Executor executor, Runnable action, Runnable rejected) {
+        synchronized (this) {
+            work.addLast(new Work(action, rejected));
+            if (working) return;
+            working = true;
+        }
+        try { executor.execute(this::runWork); }
+        catch (RejectedExecutionException ex) {
+            ArrayDeque<Work> failed;
+            synchronized (this) {
+                failed = new ArrayDeque<>(work);
+                work.clear();
+                working = false;
+            }
+            for (Work item : failed) item.rejected.run();
+        }
+    }
+
+    private void runWork() {
+        while (true) {
+            Work item;
+            synchronized (this) {
+                item = work.pollFirst();
+                if (item == null) { working = false; return; }
+            }
+            item.action.run();
         }
     }
 
@@ -150,8 +207,16 @@ public final class OverlayBackgroundImages {
     }
 
     private static final class Entry {
-        final BufferedImage image;
+        final OverlayBackgroundImage image;
         final String error;
-        Entry(BufferedImage image, String error) { this.image = image; this.error = error; }
+        final long started;
+        Entry(OverlayBackgroundImage image, String error, long started) {
+            this.image = image; this.error = error; this.started = started;
+        }
+    }
+
+    private static final class Work {
+        final Runnable action, rejected;
+        Work(Runnable action, Runnable rejected) { this.action = action; this.rejected = rejected; }
     }
 }

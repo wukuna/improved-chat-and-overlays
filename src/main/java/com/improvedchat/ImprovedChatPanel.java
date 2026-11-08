@@ -380,7 +380,7 @@ public class ImprovedChatPanel extends PluginPanel {
         boolean hasImage = !oc.getBackgroundImage().isEmpty();
         JButton chooseImage = button(plugin.isBackgroundImageLoading() ? "Loading image…" : hasImage ? "Replace image" : "Choose image");
         chooseImage.setEnabled(!plugin.isBackgroundImageLoading());
-        chooseImage.setToolTipText("Choose a PNG or JPEG background. The image fills the overlay using its background opacity.");
+        chooseImage.setToolTipText("Choose a PNG, JPEG or animated GIF background. The image fills the overlay using its background opacity.");
         chooseImage.addActionListener(e -> plugin.chooseOverlayBackground(chooseImage, oc));
         background.add(chooseImage);
         if (hasImage) {

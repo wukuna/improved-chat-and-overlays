@@ -460,7 +460,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         long generation = nativeChatGeneration;
         List<net.runelite.client.util.Filepath> files = new net.runelite.client.util.Filepath.Chooser()
                 .setIsOpen().setAcceptsFiles().setDialogTitle("Choose overlay background")
-                .addExtensionFilter("PNG or JPEG images", "png", "jpg", "jpeg").showDialog(owner);
+                .addExtensionFilter("PNG, JPEG or GIF images", "png", "jpg", "jpeg", "gif").showDialog(owner);
         if (files == null || files.isEmpty() || !nativeChatActive || generation != nativeChatGeneration
                 || !overlayConfigs.contains(overlay)) return;
         Object request = new Object();
@@ -470,6 +470,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         backgroundImages.importImage(selected, this::backgroundDirectory, executor, result -> {
             if (!backgroundRequests.remove(overlay, request) || !nativeChatActive || generation != nativeChatGeneration
                     || !overlayConfigs.contains(overlay)) {
+                backgroundImages.retain(overlayConfigs.stream().map(OverlayConfig::getBackgroundImage).collect(java.util.stream.Collectors.toSet()));
                 refreshPanel();
                 return;
             }

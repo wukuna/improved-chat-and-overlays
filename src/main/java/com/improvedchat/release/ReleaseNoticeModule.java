@@ -25,7 +25,7 @@ public final class ReleaseNoticeModule
         "Added Static color, Duo Cycle, Duo Wave, RGB cycle and RGB wave for borders, text and timestamps.",
         "Added independent Pulse effects and timers for each color control.",
         "Renamed message color highlights to Specific Message Highlighting.",
-        "Added optional background images with adjustable opacity.",
+        "Added optional image and animated GIF backgrounds with adjustable opacity.",
     };
 
     @Inject private Client client;

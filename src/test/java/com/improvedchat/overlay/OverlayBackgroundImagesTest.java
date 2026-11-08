@@ -25,20 +25,20 @@ public class OverlayBackgroundImagesTest {
     private static final String NAME = "12345678-1234-1234-1234-123456789abc.png";
 
     @Test public void pngAndJpegDecodeWithinTheRenderBudget() throws Exception {
-        BufferedImage png = OverlayBackgroundImages.read(new ByteArrayInputStream(encoded(2000, 1000, "png")));
+        BufferedImage png = read(new ByteArrayInputStream(encoded(2000, 1000, "png")));
         assertTrue(png.getWidth() <= 1024);
         assertTrue((long) png.getWidth() * png.getHeight() <= 512 * 512);
         assertEquals(2, png.getWidth() / (double) png.getHeight(), .02);
-        BufferedImage jpeg = OverlayBackgroundImages.read(new ByteArrayInputStream(encoded(20, 10, "jpeg")));
+        BufferedImage jpeg = read(new ByteArrayInputStream(encoded(20, 10, "jpeg")));
         assertEquals(20, jpeg.getWidth()); assertEquals(10, jpeg.getHeight());
         assertTrue(new Color(jpeg.getRGB(5, 5)).getRed() > 240);
     }
 
     @Test public void invalidAndOversizedImagesAreRejected() throws Exception {
         for (byte[] data : new byte[][]{new byte[]{1, 2, 3}, new byte[10 * 1024 * 1024 + 1],
-                encoded(8193, 1, "png"), encoded(3000, 3000, "png"), encoded(5, 5, "gif")}) {
+                encoded(8193, 1, "png"), encoded(3000, 3000, "png")}) {
             try {
-                OverlayBackgroundImages.read(new ByteArrayInputStream(data));
+                read(new ByteArrayInputStream(data));
                 fail("Invalid image accepted");
             } catch (IOException expected) { assertNotNull(expected.getMessage()); }
         }
@@ -141,6 +141,10 @@ public class OverlayBackgroundImagesTest {
         assertEquals(NAME, original.getBackgroundImage());
         original.setBackgroundImage(null, null);
         assertEquals(71, original.getBackgroundColour().getAlpha());
+    }
+
+    private static BufferedImage read(java.io.InputStream input) throws IOException {
+        return OverlayBackgroundImage.read(OverlayBackgroundImage.readBytes(input)).frame(0);
     }
 
     private static byte[] encoded(int width, int height, String format) throws IOException {
