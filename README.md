@@ -36,11 +36,17 @@ Previously **Improved Chat**. Existing settings, overlay positions and profiles 
 
 ## Usage
 
+### Chat input dock
+
+Open **Tools → Chat input dock** in the side panel and enable **Show input dock**. Choose Public, Clan, Channel (Friends Chat), and GIM; GIM appears when a group channel is available. These buttons change only your typing destination. They preserve your draft and visible chat tab, and send no message.
+
+The floating dock automatically fits the selected buttons. Set **Button size** from 60–200%, or hold Alt and drag an edge of the floating dock to resize it. Choose **Left side**, **Right side**, or **Bottom** and an **Attach to** overlay to place the buttons inside an extended background and border. An attached dock follows its overlay's visibility settings.
+
 ### Custom overlays
 
 Create and manage multiple overlays from the **Improved Chat and Overlays** side panel.
 
-Start with a preset, then turn on **Enabled**, choose **Message Types**, and set **Show overlay** in the **Messages** tab. **Show overlay** selects whether the overlay appears only with the chatbox hidden or with it open too. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
+Start with a preset, then turn on **Enabled**, choose **Message Types**, and set **Show overlay** in the **Messages** tab. **Show overlay** selects whether the overlay appears only with the chatbox hidden or with it open too. New custom overlays have no message types selected until you choose them. An overlay appears when it has messages, an input preview, or an attached input dock; choosing “With chatbox open or hidden” does not draw an empty frame.
 
 Use **Preview** while logged in to check appearance for 10 seconds without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Settings** for native chat features and global defaults.
 

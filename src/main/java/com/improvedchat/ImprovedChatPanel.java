@@ -190,6 +190,7 @@ public class ImprovedChatPanel extends PluginPanel {
 
     private Component buildToolsPage() {
         WidthTrackingPanel body = verticalPage();
+        addInputDockControls(body);
         JButton settings = button("Chatbox settings…");
         settings.setToolTipText("Native chatbox, border, cleanup and dialogue settings.");
         settings.addActionListener(e -> plugin.openSettings());
@@ -205,6 +206,45 @@ public class ImprovedChatPanel extends PluginPanel {
         body.add(help);
         body.add(Box.createVerticalGlue());
         return scroll(body);
+    }
+
+    private void addInputDockControls(JPanel body) {
+        ImprovedChatConfig config = plugin.getInputDockConfig();
+        if (config == null) return;
+        body.add(pageTitle("CHAT INPUT DOCK"));
+        body.add(checkRow("Show input dock", config.inputDockEnabled(), value -> plugin.setInputDockSetting("inputDockEnabled", value)));
+        if (config.inputDockEnabled()) {
+            body.add(checkRow("Public", config.inputDockPublic(), value -> plugin.setInputDockSetting("inputDockPublic", value)));
+            body.add(checkRow("Clan", config.inputDockClan(), value -> plugin.setInputDockSetting("inputDockClan", value)));
+            body.add(checkRow("Channel", config.inputDockChannel(), value -> plugin.setInputDockSetting("inputDockChannel", value)));
+            body.add(checkRow("GIM (when available)", config.inputDockGim(), value -> plugin.setInputDockSetting("inputDockGim", value)));
+            body.add(spinnerRow("Button size (%)", Math.max(60, Math.min(200, config.inputDockScale())), 60, 200, 5,
+                    value -> plugin.setInputDockSetting("inputDockScale", value)));
+            body.add(comboRow("Placement", com.improvedchat.input.InputDockPlacement.values(), config.inputDockPlacement(),
+                    value -> plugin.setInputDockSetting("inputDockPlacement", value)));
+            if (config.inputDockPlacement() != com.improvedchat.input.InputDockPlacement.FLOATING) {
+                java.util.List<DockTarget> targets = new java.util.ArrayList<>();
+                DockTarget selected = new DockTarget("", "Choose overlay…");
+                targets.add(selected);
+                for (OverlayConfig overlay : plugin.getOverlayConfigs()) {
+                    DockTarget target = new DockTarget(overlay.getId(), overlay.getName());
+                    targets.add(target);
+                    if (overlay.getId().equals(config.inputDockTarget())) selected = target;
+                }
+                body.add(comboRow("Attach to", targets.toArray(new DockTarget[0]), selected,
+                        value -> plugin.setInputDockSetting("inputDockTarget", value.id)));
+            }
+            body.add(help("Switches typing destination only. Channel means Friends Chat. Unavailable chats are dimmed. "
+                    + "Hold Alt and drag a floating dock's edge to resize. An attached dock follows its overlay's visibility and frame."));
+        }
+        body.add(Box.createVerticalStrut(12));
+    }
+
+    private static final class DockTarget {
+        final String id;
+        final String name;
+        DockTarget(String id, String name) { this.id = id; this.name = name; }
+        @Override public String toString() { return name; }
     }
 
     private Component buildHeader() {

@@ -333,6 +333,15 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         });
     }
 
+    @Inject private com.improvedchat.input.ChatInputDock inputDock;
+    @Inject private com.improvedchat.input.ChatInputDockOverlay inputDockOverlay;
+
+    public com.improvedchat.input.ChatInputDock getInputDock() { return inputDock; }
+    public ImprovedChatConfig getInputDockConfig() { return config; }
+    public void setInputDockSetting(String key, Object value) {
+        configManager.setConfiguration(CONFIG_GROUP, key, value);
+    }
+
     private volatile boolean nativeChatActive;
     private volatile long nativeChatGeneration;
 
@@ -348,6 +357,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         overlayManager.add(nativeChatBorderOverlay);
         overlayManager.add(nativeChatBackgroundOverlay);
         nativeChatBackgroundOverlay.startUp();
+        inputDock.startUp();
+        eventBus.register(inputDock);
+        mouseManager.registerMouseListener(inputDock);
+        overlayManager.add(inputDockOverlay);
 
         for (OverlayConfig oc : overlayConfigs) {
             addOverlay(oc);
@@ -394,6 +407,10 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         overlayManager.remove(nativeChatBorderOverlay);
         overlayManager.remove(nativeChatBackgroundOverlay);
         nativeChatBackgroundOverlay.shutDown();
+        inputDock.shutDown();
+        eventBus.unregister(inputDock);
+        mouseManager.unregisterMouseListener(inputDock);
+        overlayManager.remove(inputDockOverlay);
         nativeChatActive = false;
         nativeChatGeneration++;
         backgroundImages.clear();
@@ -1089,7 +1106,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             if (net.runelite.client.config.Keybind.NOT_SET.equals(config.hideChatboxHotkey()))
                 clientThread.invokeLater(chatboxVisibility::reset);
         }
-        if ("useChatFilter".equals(event.getKey())) refreshPanel();
+        if ("useChatFilter".equals(event.getKey()) || event.getKey().startsWith("inputDock")) refreshPanel();
         if ("hideSidePanel".equals(event.getKey())) {
             if (config.hideSidePanel()) {
                 clientToolbar.removeNavigation(navButton);

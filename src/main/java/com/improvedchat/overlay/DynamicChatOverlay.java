@@ -157,11 +157,17 @@ public class DynamicChatOverlay extends Overlay {
         FontMetrics metrics = FontStyler.setupGraphics(graphics, fontSize, overlayConfig);
         IndexedSprite[] modIcons = client.getModIcons();
 
+        com.improvedchat.input.ChatInputDock dock = plugin.getInputDock();
+        com.improvedchat.input.InputDockLayout dockLayout = dock == null ? null : dock.attachedLayout(graphics, overlayConfig.getId());
         int widgetWidth = getEffectiveWidth();
+        if (dockLayout != null && !globalConfig.inputDockPlacement().isVertical())
+            widgetWidth = Math.max(widgetWidth, dockLayout.size.width + 12);
 
         int borderInset = overlayConfig.isBorderEnabled()
                 || (overlayConfig.isFlashEnabled() && overlayConfig.isFlashBorder())
                 ? overlayConfig.getBorderThickness().getPixels() : 0;
+        if (dockLayout != null && globalConfig.inputDockPlacement().isVertical() && getPreferredSize() != null)
+            widgetWidth = Math.max(150, widgetWidth - dockLayout.size.width - Math.max(3, borderInset));
         int minimumGap = borderInset > 0 || overlayConfig.isRoundedCorners() ? 3 : 0;
         int paddingX = borderInset + Math.max(minimumGap, overlayConfig.getPaddingHorizontal());
         int paddingY = borderInset + Math.max(minimumGap, overlayConfig.getPaddingVertical());
@@ -205,7 +211,7 @@ public class DynamicChatOverlay extends Overlay {
         }
 
         InputPreview inputSegments = buildInputPreviewSegments(metrics, fontSize, modIcons);
-        if (renderableLines.isEmpty() && inputSegments == null) {
+        if (renderableLines.isEmpty() && inputSegments == null && dockLayout == null) {
             scrollBounds = new java.awt.Rectangle();
             return null;
         }
@@ -226,11 +232,15 @@ public class DynamicChatOverlay extends Overlay {
                 : maxMessages * lineHeight + inputExtra;
         int widgetHeight = Math.max(lineHeight + paddingY * 2, contentHeight + paddingY * 2);
 
+        com.improvedchat.input.InputDockLayout.Frame frame = dockLayout == null ? null
+                : dockLayout.attach(globalConfig.inputDockPlacement(), widgetWidth, widgetHeight, Math.max(3, borderInset));
+        int outerWidth = frame == null ? widgetWidth : frame.size.width;
+        int outerHeight = frame == null ? widgetHeight : frame.size.height;
         if (followPlayer) {
-            translateToPlayer(graphics, placementMode, widgetWidth, widgetHeight);
+            translateToPlayer(graphics, placementMode, outerWidth, outerHeight);
         }
 
-        int paintHeight = widgetHeight;
+        int paintHeight = outerHeight;
         OverlayPosition anchor = getPreferredPosition() == null ? getPosition() : getPreferredPosition();
         if (!followPlayer && useDynamicHeight && !historyMode && getPreferredLocation() == null
                 && (anchor == OverlayPosition.BOTTOM_LEFT || anchor == OverlayPosition.BOTTOM_RIGHT
@@ -238,25 +248,31 @@ public class DynamicChatOverlay extends Overlay {
 
             paintHeight = getBounds().height;
         }
+        if (frame != null) frame = dockLayout.attach(globalConfig.inputDockPlacement(), widgetWidth,
+                Math.max(1, paintHeight - (outerHeight - widgetHeight)), Math.max(3, borderInset));
+        int contentX = frame == null ? 0 : frame.content.x;
+        int contentPaintHeight = frame == null ? paintHeight : frame.content.height;
         Shape originalClip = graphics.getClip();
-        graphics.clipRect(0, 0, widgetWidth, paintHeight);
-        if (overlayConfig.isRoundedCorners()) graphics.clip(new java.awt.geom.RoundRectangle2D.Double(0, 0, widgetWidth, paintHeight, 16, 16));
+        graphics.clipRect(0, 0, outerWidth, paintHeight);
+        if (overlayConfig.isRoundedCorners()) graphics.clip(new java.awt.geom.RoundRectangle2D.Double(0, 0, outerWidth, paintHeight, 16, 16));
 
         Color background = overlayConfig.getRenderBackgroundColour();
         if (background.getAlpha() > 0) {
-            OverlayBackgroundImages.draw(graphics, plugin.getOverlayBackground(overlayConfig), background, widgetWidth, paintHeight);
+            OverlayBackgroundImages.draw(graphics, plugin.getOverlayBackground(overlayConfig), background, outerWidth, paintHeight);
         }
 
+        Shape frameClip = graphics.getClip();
+        graphics.translate(contentX, 0);
         if (historyMode) {
-            java.awt.Rectangle hit = new java.awt.Rectangle(0, 0, widgetWidth, paintHeight);
+            java.awt.Rectangle hit = new java.awt.Rectangle(0, 0, widgetWidth, contentPaintHeight);
             if (graphics.getClipBounds() != null) hit = hit.intersection(graphics.getClipBounds());
             scrollBounds = graphics.getTransform().createTransformedShape(hit).getBounds();
             lastPaint = System.currentTimeMillis();
             scrollPaintOrder = PAINT_ORDER.incrementAndGet();
         }
         graphics.clipRect(paddingX, paddingY, Math.max(0, widgetWidth - paddingX * 2),
-                Math.max(0, paintHeight - paddingY * 2));
-        int y = paintHeight - paddingY - lineDescent;
+                Math.max(0, contentPaintHeight - paddingY * 2));
+        int y = contentPaintHeight - paddingY - lineDescent;
         if (inputSegments != null) {
             drawInputPreview(graphics, inputSegments, y, widgetWidth,
                     paddingX, lineAscent, lineHeight, fontSize, metrics, modIcons, drawShadow, currentTime);
@@ -275,10 +291,18 @@ public class DynamicChatOverlay extends Overlay {
             y -= lineHeight;
         }
 
+        graphics.translate(-contentX, 0);
+        graphics.setClip(frameClip);
+        if (frame != null) {
+            Graphics2D dockGraphics = (Graphics2D) graphics.create();
+            dockGraphics.translate(frame.dock.x, frame.dock.y);
+            dock.paint(dockGraphics, dockLayout, false);
+            dockGraphics.dispose();
+        }
         graphics.setClip(originalClip);
-        AttentionEngine.drawBorder(graphics, overlayConfig, widgetWidth, paintHeight, currentTime);
+        AttentionEngine.drawBorder(graphics, overlayConfig, outerWidth, paintHeight, currentTime);
 
-        return followPlayer ? null : new Dimension(widgetWidth, widgetHeight);
+        return followPlayer ? null : new Dimension(outerWidth, outerHeight);
     }
 
     private List<RenderLine> messageLines(OverlayMessage msg, FontMetrics metrics, FontSize fontSize,

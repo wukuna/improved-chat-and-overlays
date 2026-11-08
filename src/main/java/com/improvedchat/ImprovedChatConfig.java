@@ -15,6 +15,28 @@ import net.runelite.client.config.Units;
 @ConfigGroup("improvedchat")
 public interface ImprovedChatConfig extends Config {
     String GROUP = "improvedchat";
+    @ConfigSection(name = "Chat input dock", description = "Buttons for the typing destination. Configure attachment in the side panel Tools tab.", position = 5, closedByDefault = true)
+    String inputDockSection = "inputDock";
+
+    @ConfigItem(keyName = "inputDockEnabled", name = "Show input dock", description = "Show buttons that switch only your typing destination", section = inputDockSection, position = 0)
+    default boolean inputDockEnabled() { return false; }
+    @ConfigItem(keyName = "inputDockPublic", name = "Public", description = "Show the Public input button", section = inputDockSection, position = 1)
+    default boolean inputDockPublic() { return true; }
+    @ConfigItem(keyName = "inputDockClan", name = "Clan", description = "Show the Clan input button", section = inputDockSection, position = 2)
+    default boolean inputDockClan() { return true; }
+    @ConfigItem(keyName = "inputDockChannel", name = "Channel", description = "Show the Friends Chat input button", section = inputDockSection, position = 3)
+    default boolean inputDockChannel() { return true; }
+    @ConfigItem(keyName = "inputDockGim", name = "GIM", description = "Show the Group input button when a Group Ironman channel is available", section = inputDockSection, position = 4)
+    default boolean inputDockGim() { return true; }
+    @Range(min = 60, max = 200)
+    @Units(Units.PERCENT)
+    @ConfigItem(keyName = "inputDockScale", name = "Button size", description = "Scale icons, text and buttons together", section = inputDockSection, position = 5)
+    default int inputDockScale() { return 100; }
+    @ConfigItem(hidden = true, keyName = "inputDockPlacement", name = "Dock placement", description = "Choose a floating dock or attach it in the side panel Tools tab")
+    default com.improvedchat.input.InputDockPlacement inputDockPlacement() { return com.improvedchat.input.InputDockPlacement.FLOATING; }
+    @ConfigItem(hidden = true, keyName = "inputDockTarget", name = "Attach to overlay", description = "Chosen chat overlay")
+    default String inputDockTarget() { return ""; }
+
     @ConfigSection(name = "Chatbox", description = "Collapse, resize and adjust chat opacity, including secondary sizing", position = 0, closedByDefault = true)
     String chatboxSection = "chatbox";
     @ConfigSection(name = "Chat cleanup", description = "Independent channel names, instructions, status icons and message cleanup", position = 1, closedByDefault = true)
