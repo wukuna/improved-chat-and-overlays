@@ -29,6 +29,8 @@ public class ImprovedChatPanelTest {
         boolean globalOverride;
         int saves;
         String recoveryMessage;
+        ImprovedChatConfig dockConfig;
+        @Override public ImprovedChatConfig getInputDockConfig() { return dockConfig; }
         FakePlugin() { configs.add(OverlayConfig.preset("Game Alerts", "game")); }
         @Override public List<OverlayConfig> getOverlayConfigs() { return configs; }
         @Override public String getConfigRecoveryMessage() { return recoveryMessage; }
@@ -180,7 +182,8 @@ public class ImprovedChatPanelTest {
 
     @Test public void colorsStayTogetherAndTargetsSaveIndependently() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            FakePlugin plugin = new FakePlugin(); OverlayConfig cfg = plugin.configs.get(0);
+            FakePlugin plugin = new FakePlugin();
+            plugin.dockConfig = new ImprovedChatConfig() {}; OverlayConfig cfg = plugin.configs.get(0);
             cfg.getTextSettings().setRainbowEnabled(true); cfg.getTextSettings().setRainbowRules("rare drop");
             ImprovedChatPanel panel = editingPanel(plugin); panel.setSize(225, 900); tabs(panel).setSelectedIndex(2);
             assertEquals("Colors", tabs(panel).getTitleAt(2));
@@ -205,6 +208,18 @@ public class ImprovedChatPanelTest {
             assertEquals(2, tabs(panel).getSelectedIndex());
             layout(panel);
             try { capture(panel, "overlay-colors"); } catch (Exception e) { throw new AssertionError(e); }
+
+            button(panel, "CHAT INPUT BUTTONS").doClick();
+            for (String name : new String[]{"Button background", "Button border", "Selected border", "Text and icons", "Unavailable text/icons"}) {
+                Component swatch = namedComponent(editor(panel), name);
+                assertNotNull(name, swatch);
+                assertTrue(SwingUtilities.isDescendingFrom(swatch, tabs(panel).getComponentAt(2)));
+            }
+            button(panel, "TEXT COLORS").doClick(); button(panel, "TIMESTAMP COLORS").doClick();
+            button(panel, "BORDER").doClick();
+            layout(panel);
+            try { capture(panel, "chat-input-button-colors"); } catch (Exception e) { throw new AssertionError(e); }
+
         });
     }
 
@@ -461,6 +476,17 @@ public class ImprovedChatPanelTest {
             if (child instanceof JScrollPane) return (JScrollPane) child;
         }
         throw new AssertionError("Missing page scroll pane");
+    }
+
+    private static Component namedComponent(Container parent, String name) {
+        for (Component child : parent.getComponents()) {
+            if (name.equals(child.getName())) return child;
+            if (child instanceof Container) {
+                Component found = namedComponent((Container) child, name);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private static AbstractButton button(Container parent, String text) {

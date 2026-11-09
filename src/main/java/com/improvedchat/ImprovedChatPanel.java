@@ -433,6 +433,25 @@ public class ImprovedChatPanel extends PluginPanel {
         if (imageStatus != null) background.add(help(imageStatus));
         colors.add(accordionPanel(oc, "backgroundColors", "BACKGROUND", false, background));
 
+        ImprovedChatConfig dockConfig = plugin.getInputDockConfig();
+        if (dockConfig != null) {
+            JPanel buttons = panel(CARD);
+            buttons.setLayout(new BoxLayout(buttons, BoxLayout.Y_AXIS));
+            buttons.add(help("Shared by the floating input dock and all attached input buttons."));
+            buttons.add(colorRow("Button background", dockConfig.inputDockButtonBackground(),
+                    value -> plugin.setInputDockSetting("inputDockButtonBackground", value)));
+            buttons.add(colorRow("Button border", dockConfig.inputDockButtonBorder(),
+                    value -> plugin.setInputDockSetting("inputDockButtonBorder", value)));
+            buttons.add(colorRow("Selected border", dockConfig.inputDockSelectedBorder(),
+                    value -> plugin.setInputDockSetting("inputDockSelectedBorder", value)));
+            buttons.add(colorRow("Text and icons", dockConfig.inputDockButtonForeground(),
+                    value -> plugin.setInputDockSetting("inputDockButtonForeground", value)));
+            buttons.add(colorRow("Unavailable text/icons", dockConfig.inputDockDisabledForeground(),
+                    value -> plugin.setInputDockSetting("inputDockDisabledForeground", value)));
+            colors.add(accordionPanel(oc, "inputButtonColors", "CHAT INPUT BUTTONS", false, buttons));
+        }
+
+
         JPanel positionContent = panel(CARD);
         positionContent.setLayout(new BoxLayout(positionContent, BoxLayout.Y_AXIS));
         positionContent.add(comboRow("Mode", PLACEMENT_MODES, oc.getPlacementMode(), v -> {

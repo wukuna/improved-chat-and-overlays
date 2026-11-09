@@ -169,12 +169,12 @@ public class ChatInputDockTest {
         bus.unregister(f.dock);
     }
 
-    @Test public void clippedAndCoveredAttachedButtonsDoNotCaptureInput() throws Exception {
+    @Test public void nativeChatDoesNotBlockButtonsButClippedAreasDoNotCaptureInput() throws Exception {
         Fixture f = new Fixture(); Widget chat = mock(Widget.class);
         when(chat.getBounds()).thenReturn(new Rectangle(0, 0, 1000, 500));
         when(chat.getNoClickThrough()).thenReturn(true);
         when(f.client.getWidget(InterfaceID.Chatbox.CHATAREA)).thenReturn(chat);
-        f.paint(false); assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
         f.paint(true); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
         f.dock.onBeforeRender(new BeforeRender());
         Graphics2D g = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB).createGraphics();
@@ -212,7 +212,7 @@ public class ChatInputDockTest {
         }
     }
 
-    @Test public void visibleChildrenAndOpaqueLayersStillBlockAttachedButtons() throws Exception {
+    @Test public void visibleHudChildrenBlockAttachedButtonsButContainerClickThroughDoesNot() throws Exception {
         Fixture f = new Fixture();
         Widget parent = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
         Widget nested = widget(WidgetType.LAYER, new Rectangle(0, 0, 500, 200));
@@ -224,7 +224,7 @@ public class ChatInputDockTest {
         when(graphic.isHidden()).thenReturn(true);
         f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
         when(parent.getNoClickThrough()).thenReturn(true);
-        f.paint(false); assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
     }
 
     @Test public void childOcclusionUsesClippedBoundsAndAvoidsDuplicateTraversal() throws Exception {
@@ -254,6 +254,46 @@ public class ChatInputDockTest {
         when(widget.getType()).thenReturn(type);
         when(widget.getBounds()).thenReturn(bounds);
         return widget;
+    }
+
+    @Test public void fullButtonsIgnoreNativeChatAndTransparentHudClickThroughSettings() throws Exception {
+        for (boolean blockThrough : new boolean[]{false, true}) {
+            for (int scale : new int[]{60, 70, 100, 200}) {
+                for (InputDockPlacement placement : InputDockPlacement.values()) {
+                    Fixture f = new Fixture(); f.settings.scale = scale; f.settings.placement = placement;
+                    Widget chat = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
+                    Widget background = widget(WidgetType.RECTANGLE, new Rectangle(0, 0, 1000, 500));
+                    when(chat.getNoClickThrough()).thenReturn(blockThrough);
+                    when(chat.getStaticChildren()).thenReturn(new Widget[]{background});
+                    when(f.client.getWidget(InterfaceID.Chatbox.CHATAREA)).thenReturn(chat);
+                    when(f.client.getWidget(InterfaceID.Chatbox.CONTROLS)).thenReturn(chat);
+                    Widget hud = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
+                    when(hud.getNoClickThrough()).thenReturn(blockThrough);
+                    when(f.client.getWidget(InterfaceID.ToplevelOsrsStretch.SIDE_MENU)).thenReturn(hud);
+                    f.paint(placement == InputDockPlacement.FLOATING);
+                    for (int i = 0; i < f.layout.modes.size(); i++) {
+                        Rectangle r = f.layout.buttons.get(i);
+                        int[][] points = {{4, 4}, {r.width - 5, 4}, {4, r.height - 5},
+                                {r.width - 5, r.height - 5}, {r.width / 4, r.height / 2},
+                                {r.width / 2, r.height / 2}, {r.width - 4, r.height / 2}};
+                        for (int[] point : points) {
+                            f.paint(placement == InputDockPlacement.FLOATING);
+                            clearInvocations(f.client, chat, hud, background);
+                            MouseEvent event = mouse(MouseEvent.MOUSE_PRESSED, r.x + 40 + point[0],
+                                    r.y + 30 + point[1], 0, MouseEvent.BUTTON1);
+                            SwingUtilities.invokeAndWait(() -> f.dock.mousePressed(event));
+                            assertTrue(placement + " at " + scale + "%: full button must be clickable", event.isConsumed());
+                            verifyNoInteractions(f.client, chat, hud, background);
+                            f.runQueued();
+                            verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, f.layout.modes.get(i).value);
+                            verify(f.client).runScript(ScriptID.CHAT_TEXT_INPUT_REBUILD, "");
+                            verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
+                            verify(f.client, never()).setVarcIntValue(eq(VarClientID.CHAT_VIEW), anyInt());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Test public void attachmentsContainButtonsAndContentWithoutOverlapAtEverySize() {

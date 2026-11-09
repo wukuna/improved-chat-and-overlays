@@ -42,6 +42,8 @@ Open **Tools → Chat input dock** in the side panel and enable **Show input doc
 
 The floating dock automatically fits the selected buttons. Set **Button size** from 60–200%, or hold Alt and drag an edge of the floating dock to resize it. Choose **Left side**, **Right side**, or **Bottom** and an **Attach to** overlay to place the buttons inside an extended background and border. An attached dock follows its overlay's visibility settings.
 
+The whole input button is clickable independently of chatbox click-through settings. Public uses a globe icon; the selected mode keeps the same background with a blue outline. Open an overlay editor’s **Colors → Chat input buttons** to customize the shared button background, borders, text and icons.
+
 ### Custom overlays
 
 Create and manage multiple overlays from the **Improved Chat and Overlays** side panel.

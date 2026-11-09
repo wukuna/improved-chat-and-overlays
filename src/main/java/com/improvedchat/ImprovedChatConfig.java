@@ -37,6 +37,17 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(hidden = true, keyName = "inputDockTarget", name = "Attach to overlay", description = "Chosen chat overlay")
     default String inputDockTarget() { return ""; }
 
+    @ConfigItem(hidden = true, keyName = "inputDockButtonBackground", name = "Button background", description = "Chat input button background, shared by selected and unselected buttons")
+    default Color inputDockButtonBackground() { return new Color(38, 40, 43); }
+    @ConfigItem(hidden = true, keyName = "inputDockButtonBorder", name = "Button border", description = "Chat input button border")
+    default Color inputDockButtonBorder() { return new Color(61, 64, 68); }
+    @ConfigItem(hidden = true, keyName = "inputDockSelectedBorder", name = "Selected border", description = "Outline and indicator for the active chat input mode")
+    default Color inputDockSelectedBorder() { return new Color(100, 151, 195); }
+    @ConfigItem(hidden = true, keyName = "inputDockButtonForeground", name = "Button text and icons", description = "Chat input button text and icons")
+    default Color inputDockButtonForeground() { return new Color(210, 213, 217); }
+    @ConfigItem(hidden = true, keyName = "inputDockDisabledForeground", name = "Unavailable text and icons", description = "Text and icons for unavailable input modes")
+    default Color inputDockDisabledForeground() { return new Color(117, 119, 122); }
+
     @ConfigSection(name = "Chatbox", description = "Collapse, resize and adjust chat opacity, including secondary sizing", position = 0, closedByDefault = true)
     String chatboxSection = "chatbox";
     @ConfigSection(name = "Chat cleanup", description = "Independent channel names, instructions, status icons and message cleanup", position = 1, closedByDefault = true)

@@ -99,8 +99,7 @@ public class ChatInputDock extends MouseAdapter {
     private Area coveredWidgets() {
         Area covered = new Area();
         Set<Widget> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        int[] ids = {InterfaceID.Chatbox.CHATAREA, InterfaceID.Chatbox.CONTROLS,
-                InterfaceID.Toplevel.MAPCONTAINER, InterfaceID.Toplevel.SIDE3,
+        int[] ids = {InterfaceID.Toplevel.MAPCONTAINER, InterfaceID.Toplevel.SIDE3,
                 InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER, InterfaceID.ToplevelOsrsStretch.SIDE_MENU,
                 InterfaceID.ToplevelPreEoc.MAP_CONTAINER, InterfaceID.ToplevelPreEoc.SIDE_CONTAINER};
         for (int id : ids) {
@@ -114,7 +113,7 @@ public class ChatInputDock extends MouseAdapter {
         Rectangle bounds = widget.getBounds();
         if (clip != null) bounds = bounds.intersection(clip);
         if (bounds.isEmpty()) return;
-        if (widget.getType() != WidgetType.LAYER || widget.getNoClickThrough()) {
+        if (widget.getType() != WidgetType.LAYER) {
             covered.add(new Area(bounds));
             return;
         }
@@ -150,11 +149,11 @@ public class ChatInputDock extends MouseAdapter {
                 Rectangle rect = layout.buttons.get(i);
                 boolean available = ready && mode.available(client);
                 boolean chosen = selected == mode.value;
-                g.setColor(chosen ? new Color(73, 64, 51) : new Color(38, 40, 43, 230));
+                g.setColor(config.inputDockButtonBackground());
                 g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, layout.px(8), layout.px(8));
-                g.setColor(chosen ? new Color(210, 178, 109) : new Color(61, 64, 68));
+                g.setColor(chosen ? config.inputDockSelectedBorder() : config.inputDockButtonBorder());
                 g.drawRoundRect(rect.x, rect.y, rect.width - 1, rect.height - 1, layout.px(8), layout.px(8));
-                g.setColor(!available ? new Color(117, 119, 122) : chosen ? new Color(235, 202, 134) : new Color(210, 213, 217));
+                g.setColor(available ? config.inputDockButtonForeground() : config.inputDockDisabledForeground());
                 Graphics2D icon = (Graphics2D) g.create();
                 icon.translate(rect.x + layout.px(10), rect.y + layout.px(9));
                 icon.scale(layout.scale, layout.scale);
@@ -162,7 +161,10 @@ public class ChatInputDock extends MouseAdapter {
                 icon.dispose();
                 int baseline = rect.y + (rect.height - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
                 g.drawString(mode.label, rect.x + layout.px(32), baseline);
-                if (chosen) g.fillOval(rect.x + rect.width - layout.px(9), rect.y + rect.height / 2 - layout.px(2), layout.px(4), layout.px(4));
+                if (chosen) {
+                    g.setColor(config.inputDockSelectedBorder());
+                    g.fillOval(rect.x + rect.width - layout.px(9), rect.y + rect.height / 2 - layout.px(2), layout.px(4), layout.px(4));
+                }
                 Area visible = new Area(rect);
                 if (g.getClip() != null) visible.intersect(new Area(g.getClip()));
                 visible.transform(g.getTransform());
@@ -181,7 +183,13 @@ public class ChatInputDock extends MouseAdapter {
 
     private static void drawIcon(Graphics2D g, ChatInputMode mode) {
         g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        if (mode == ChatInputMode.CLAN) {
+        if (mode == ChatInputMode.PUBLIC) {
+            g.drawOval(0, 0, 16, 16);
+            g.drawOval(4, 0, 8, 16);
+            g.drawLine(0, 8, 16, 8);
+            g.drawArc(1, 2, 14, 4, 180, 180);
+            g.drawArc(1, 10, 14, 4, 0, 180);
+        } else if (mode == ChatInputMode.CLAN) {
             g.drawOval(6, 1, 5, 5); g.drawArc(3, 8, 11, 10, 0, 180);
             g.drawArc(0, 2, 5, 5, 80, 210); g.drawArc(-2, 9, 8, 8, 45, 120);
             g.drawArc(12, 2, 5, 5, -110, 210); g.drawArc(11, 9, 8, 8, 15, 120);
