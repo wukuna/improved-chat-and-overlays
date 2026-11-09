@@ -12,7 +12,10 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,6 +24,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.ScriptID;
 import net.runelite.api.WidgetNode;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.gameval.InterfaceID;
@@ -94,15 +98,34 @@ public class ChatInputDock extends MouseAdapter {
 
     private Area coveredWidgets() {
         Area covered = new Area();
+        Set<Widget> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         int[] ids = {InterfaceID.Chatbox.CHATAREA, InterfaceID.Chatbox.CONTROLS,
                 InterfaceID.Toplevel.MAPCONTAINER, InterfaceID.Toplevel.SIDE3,
                 InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER, InterfaceID.ToplevelOsrsStretch.SIDE_MENU,
                 InterfaceID.ToplevelPreEoc.MAP_CONTAINER, InterfaceID.ToplevelPreEoc.SIDE_CONTAINER};
         for (int id : ids) {
-            Widget widget = client.getWidget(id);
-            if (widget != null && !widget.isHidden()) covered.add(new Area(widget.getBounds()));
+            coverWidget(client.getWidget(id), null, covered, visited, 0);
         }
         return covered;
+    }
+
+    private static void coverWidget(Widget widget, Rectangle clip, Area covered, Set<Widget> visited, int depth) {
+        if (widget == null || depth > 16 || !visited.add(widget) || widget.isHidden()) return;
+        Rectangle bounds = widget.getBounds();
+        if (clip != null) bounds = bounds.intersection(clip);
+        if (bounds.isEmpty()) return;
+        if (widget.getType() != WidgetType.LAYER || widget.getNoClickThrough()) {
+            covered.add(new Area(bounds));
+            return;
+        }
+        coverChildren(widget.getStaticChildren(), bounds, covered, visited, depth + 1);
+        coverChildren(widget.getDynamicChildren(), bounds, covered, visited, depth + 1);
+        coverChildren(widget.getNestedChildren(), bounds, covered, visited, depth + 1);
+    }
+
+    private static void coverChildren(Widget[] children, Rectangle clip, Area covered, Set<Widget> visited, int depth) {
+        if (children == null) return;
+        for (Widget child : children) coverWidget(child, clip, covered, visited, depth);
     }
 
     public void paint(Graphics2D target, InputDockLayout layout, boolean floating) {

@@ -24,6 +24,7 @@ import net.runelite.api.events.BeforeRender;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -171,6 +172,7 @@ public class ChatInputDockTest {
     @Test public void clippedAndCoveredAttachedButtonsDoNotCaptureInput() throws Exception {
         Fixture f = new Fixture(); Widget chat = mock(Widget.class);
         when(chat.getBounds()).thenReturn(new Rectangle(0, 0, 1000, 500));
+        when(chat.getNoClickThrough()).thenReturn(true);
         when(f.client.getWidget(InterfaceID.Chatbox.CHATAREA)).thenReturn(chat);
         f.paint(false); assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
         f.paint(true); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
@@ -193,6 +195,65 @@ public class ChatInputDockTest {
         assertTrue(overlay.render(g).width < original.width); assertEquals(150, f.settings.scale);
         overlay.setPreferredSize(new Dimension(10000, 10000)); assertEquals(200, f.settings.scale);
         g.dispose();
+    }
+
+    @Test public void expandedTransparentHudParentsDoNotBlockAttachedButtons() throws Exception {
+        for (int root : new int[]{InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER,
+                InterfaceID.ToplevelOsrsStretch.SIDE_MENU, InterfaceID.ToplevelPreEoc.SIDE_CONTAINER}) {
+            Fixture f = new Fixture();
+            Widget parent = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
+            Widget graphic = widget(WidgetType.GRAPHIC, new Rectangle(800, 100, 150, 250));
+            when(parent.getStaticChildren()).thenReturn(new Widget[]{graphic});
+            when(f.client.getWidget(root)).thenReturn(parent);
+            f.paint(false); clearInvocations(f.client, parent, graphic);
+            assertTrue("An expanded transparent parent must not block the dock", f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            verifyNoInteractions(f.client, parent, graphic);
+            f.runQueued(); verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 0);
+        }
+    }
+
+    @Test public void visibleChildrenAndOpaqueLayersStillBlockAttachedButtons() throws Exception {
+        Fixture f = new Fixture();
+        Widget parent = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
+        Widget nested = widget(WidgetType.LAYER, new Rectangle(0, 0, 500, 200));
+        Widget graphic = widget(WidgetType.GRAPHIC, new Rectangle(0, 0, 500, 200));
+        when(parent.getNestedChildren()).thenReturn(new Widget[]{nested});
+        when(nested.getDynamicChildren()).thenReturn(new Widget[]{graphic});
+        when(f.client.getWidget(InterfaceID.ToplevelPreEoc.SIDE_CONTAINER)).thenReturn(parent);
+        f.paint(false); assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        when(graphic.isHidden()).thenReturn(true);
+        f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        when(parent.getNoClickThrough()).thenReturn(true);
+        f.paint(false); assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+    }
+
+    @Test public void childOcclusionUsesClippedBoundsAndAvoidsDuplicateTraversal() throws Exception {
+        Fixture f = new Fixture();
+        Widget parent = widget(WidgetType.LAYER, new Rectangle(700, 0, 300, 500));
+        Widget graphic = widget(WidgetType.GRAPHIC, new Rectangle(0, 0, 1000, 500));
+        when(parent.getStaticChildren()).thenReturn(new Widget[]{graphic});
+        when(parent.getDynamicChildren()).thenReturn(new Widget[]{graphic});
+        when(f.client.getWidget(InterfaceID.ToplevelPreEoc.SIDE_CONTAINER)).thenReturn(parent);
+        f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        verify(graphic, times(1)).getBounds();
+    }
+
+    @Test public void queuedSwitchRechecksMovedVisibleWidgets() throws Exception {
+        Fixture f = new Fixture();
+        Widget parent = widget(WidgetType.LAYER, new Rectangle(0, 0, 1000, 500));
+        Widget graphic = widget(WidgetType.GRAPHIC, new Rectangle(800, 100, 150, 250));
+        when(parent.getStaticChildren()).thenReturn(new Widget[]{graphic});
+        when(f.client.getWidget(InterfaceID.ToplevelPreEoc.MAP_CONTAINER)).thenReturn(parent);
+        f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        when(graphic.getBounds()).thenReturn(new Rectangle(0, 0, 500, 200));
+        f.runQueued(); verify(f.client, never()).setVarcIntValue(anyInt(), anyInt());
+    }
+
+    private static Widget widget(int type, Rectangle bounds) {
+        Widget widget = mock(Widget.class);
+        when(widget.getType()).thenReturn(type);
+        when(widget.getBounds()).thenReturn(bounds);
+        return widget;
     }
 
     @Test public void attachmentsContainButtonsAndContentWithoutOverlapAtEverySize() {
