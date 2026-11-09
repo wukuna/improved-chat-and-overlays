@@ -30,13 +30,15 @@ public class ChatInputDockOverlay extends Overlay {
     @Override public String getName() { return "Improved Chat Input Dock"; }
 
     @Override public Dimension render(Graphics2D graphics) {
-        if (config.inputDockPlacement() != InputDockPlacement.FLOATING || !dock.canSwitch()) return null;
-        InputDockLayout layout = dock.layout(graphics, false);
-        if (layout == null) return null;
-        dock.paint(graphics, layout, true);
-        paintedSize = new Dimension(layout.size);
-        paintedScale = config.inputDockScale();
-        return layout.size;
+        try {
+            if (config.inputDockPlacement() != InputDockPlacement.FLOATING || !dock.canSwitch()) return null;
+            InputDockLayout layout = dock.layout(graphics, false);
+            if (layout == null) return null;
+            dock.paint(graphics, layout, true);
+            paintedSize = new Dimension(layout.size);
+            paintedScale = config.inputDockScale();
+            return layout.size;
+        } finally { dock.finishFrame(); }
     }
 
     @Override public void setPreferredSize(Dimension size) {

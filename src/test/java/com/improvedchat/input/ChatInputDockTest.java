@@ -18,7 +18,6 @@ import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.FriendsChatManager;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
-import net.runelite.api.ScriptID;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.gameval.InterfaceID;
@@ -96,7 +95,7 @@ public class ChatInputDockTest {
             verifyNoInteractions(f.client);
             f.runQueued();
             verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, mode.value);
-            verify(f.client).runScript(ScriptID.CHAT_TEXT_INPUT_REBUILD, "");
+            verify(f.client).runScript(ChatInputDock.CHAT_INPUT_WIDGET_BUILD);
             verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
             verify(f.client, never()).setVarcIntValue(eq(VarClientID.CHAT_VIEW), anyInt());
             verify(f.client, never()).setVarbit(anyInt(), anyInt());
@@ -165,8 +164,44 @@ public class ChatInputDockTest {
         bus.post(new ProfileChanged()); f.runQueued();
         verify(f.client, never()).setVarcIntValue(anyInt(), anyInt());
         f.paint(true); bus.post(new BeforeRender());
+        assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        f.dock.finishFrame();
         assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        f.runQueued(); verify(f.client, never()).setVarcIntValue(anyInt(), anyInt());
         bus.unregister(f.dock);
+    }
+
+    @Test public void buttonEdgesRemainClickableWhileTheNextFrameIsBeingDrawn() throws Exception {
+        for (boolean floating : new boolean[]{false, true}) {
+            Fixture f = new Fixture(); f.settings.scale = 70;
+            f.paint(floating);
+            f.dock.onBeforeRender(new BeforeRender());
+            Rectangle button = f.layout.buttons.get(0);
+            MouseEvent event = mouse(MouseEvent.MOUSE_PRESSED, button.x + 41,
+                    button.y + 30 + button.height - 2, 0, MouseEvent.BUTTON1);
+            clearInvocations(f.client);
+            SwingUtilities.invokeAndWait(() -> f.dock.mousePressed(event));
+            assertTrue("The currently displayed button must remain clickable during redraw", event.isConsumed());
+            verifyNoInteractions(f.client);
+            f.runQueued();
+            verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 0);
+        }
+    }
+
+    @Test public void finalOverlayPassClearsHiddenAttachedDockAndRetainsVisibleDock() throws Exception {
+        Fixture f = new Fixture(); f.settings.placement = InputDockPlacement.BOTTOM;
+        ChatInputDockOverlay finalPass = new ChatInputDockOverlay(f.dock, f.settings, null);
+        Graphics2D g = new BufferedImage(1000, 500, BufferedImage.TYPE_INT_ARGB).createGraphics();
+        try {
+            f.dock.onBeforeRender(new BeforeRender()); f.paint(false); finalPass.render(g);
+            assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            f.runQueued(); clearInvocations(f.client);
+            f.dock.onBeforeRender(new BeforeRender());
+            assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            finalPass.render(g);
+            assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            f.runQueued(); verify(f.client, never()).setVarcIntValue(anyInt(), anyInt());
+        } finally { g.dispose(); }
     }
 
     @Test public void nativeChatDoesNotBlockButtonsButClippedAreasDoNotCaptureInput() throws Exception {
@@ -286,7 +321,7 @@ public class ChatInputDockTest {
                             verifyNoInteractions(f.client, chat, hud, background);
                             f.runQueued();
                             verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, f.layout.modes.get(i).value);
-                            verify(f.client).runScript(ScriptID.CHAT_TEXT_INPUT_REBUILD, "");
+                            verify(f.client).runScript(ChatInputDock.CHAT_INPUT_WIDGET_BUILD);
                             verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
                             verify(f.client, never()).setVarcIntValue(eq(VarClientID.CHAT_VIEW), anyInt());
                         }

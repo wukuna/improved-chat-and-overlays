@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.ScriptID;
 import net.runelite.api.WidgetNode;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
@@ -37,12 +36,14 @@ import net.runelite.client.input.MouseAdapter;
 
 @Singleton
 public class ChatInputDock extends MouseAdapter {
+    static final int CHAT_INPUT_WIDGET_BUILD = 223;
     private final Client client;
     private final ClientThread clientThread;
     private final ImprovedChatConfig config;
     private final AtomicLong generation = new AtomicLong();
     private volatile boolean active;
     private volatile HitMap painted;
+    private boolean rendered;
     private boolean pressed;
     private boolean clicked;
 
@@ -59,7 +60,8 @@ public class ChatInputDock extends MouseAdapter {
     @Subscribe public void onConfigChanged(ConfigChanged event) {
         if (ImprovedChatConfig.GROUP.equals(event.getGroup())) invalidate();
     }
-    @Subscribe public void onBeforeRender(BeforeRender event) { painted = null; }
+    @Subscribe public void onBeforeRender(BeforeRender event) { rendered = false; }
+    public void finishFrame() { if (!rendered) painted = null; }
 
     public InputDockLayout layout(Graphics2D graphics, boolean vertical) {
         if (!active || !config.inputDockEnabled() || client.getGameState() != GameState.LOGGED_IN) return null;
@@ -178,6 +180,7 @@ public class ChatInputDock extends MouseAdapter {
             area.subtract(covered);
             painted = ready ? new HitMap(area, regions,
                     layout.modes, enabled, generation.get(), floating) : null;
+            rendered = true;
         } finally { g.dispose(); }
     }
 
@@ -219,10 +222,10 @@ public class ChatInputDock extends MouseAdapter {
             if (hit.enabled.get(i) && hit.regions.get(i).contains(event.getPoint())) {
                 ChatInputMode mode = hit.modes.get(i);
                 clientThread.invokeLater(() -> {
-                    if (hit.generation == generation.get() && canSwitch() && mode.selected(config) && mode.available(client)
+                    if (painted != null && hit.generation == generation.get() && canSwitch() && mode.selected(config) && mode.available(client)
                             && (hit.floating || !coveredWidgets().contains(event.getPoint()))) {
                         client.setVarcIntValue(VarClientID.CHATBOX_MODE, mode.value);
-                        client.runScript(ScriptID.CHAT_TEXT_INPUT_REBUILD, "");
+                        client.runScript(CHAT_INPUT_WIDGET_BUILD);
                     }
                 });
                 break;
