@@ -81,7 +81,7 @@ import java.util.regex.Pattern;
         name = "Improved Chat and Overlays",
         configName = "improvedchat",
         internalName = "improved-chat",
-        description = "Create filtered chat overlays with custom styles, RGB effects and alerts. Resize or collapse the chatbox, tidy messages and improve dialogue readability.",
+        description = "Create custom chat overlays, switch chat input modes, and resize, collapse or hide the chatbox, with filters, history and alerts.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
 public class ImprovedChatPlugin extends Plugin implements net.runelite.client.input.MouseWheelListener {
