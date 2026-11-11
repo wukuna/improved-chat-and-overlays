@@ -321,6 +321,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         clientThread.invokeLater(() -> {
             if (!nativeChatActive || generation != nativeChatGeneration) return;
             chatboxVisibility.reset();
+            updatePmWidgetVisibility();
             for (DynamicChatOverlay overlay : overlays) overlayManager.remove(overlay);
             overlays.clear();
             overlayMessageFilters.clear();
@@ -439,9 +440,12 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         OverlayColorRuleEngine.configure(null);
         AttentionEngine.setClientFocused(true);
 
-        if (pmWidgetsHidden) {
+        long pmGeneration = nativeChatGeneration;
+        clientThread.invokeLater(() -> {
+            if (nativeChatActive || pmGeneration != nativeChatGeneration) return;
             setPmWidgetsHidden(false);
-        }
+            pmWidgetsHidden = false;
+        });
 
         if (panel != null) {
             panel.close();
@@ -735,9 +739,13 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void updatePmWidgetVisibility() {
-        boolean shouldHide = config.hidePrivateChat();
-        setPmWidgetsHidden(shouldHide);
-        pmWidgetsHidden = shouldHide;
+        long generation = nativeChatGeneration;
+        clientThread.invoke(() -> {
+            if (!nativeChatActive || generation != nativeChatGeneration) return;
+            boolean shouldHide = config.hidePrivateChat();
+            setPmWidgetsHidden(shouldHide);
+            pmWidgetsHidden = shouldHide;
+        });
     }
 
     @Subscribe
@@ -770,7 +778,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Subscribe
     public void onWidgetLoaded(WidgetLoaded event) {
-        if (event.getGroupId() == InterfaceID.PM_CHAT && pmWidgetsHidden) {
+        if (nativeChatActive && event.getGroupId() == InterfaceID.PM_CHAT && pmWidgetsHidden) {
             setPmWidgetsHidden(true);
         }
     }

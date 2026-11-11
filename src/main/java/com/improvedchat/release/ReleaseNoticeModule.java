@@ -18,7 +18,7 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-03-overlay-colors";
+    static final String RELEASE = "2026-11-11-private-chat-thread";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] UPDATES = {
         "Added a resizable chat input dock with selectable buttons and left, right or bottom overlay attachment.",
@@ -27,6 +27,7 @@ public final class ReleaseNoticeModule
         "Added independent Pulse effects and timers for each color control.",
         "Renamed message color highlights to Specific Message Highlighting.",
         "Added optional image and animated GIF backgrounds with adjustable opacity.",
+        "Private-chat visibility changes now safely update on the game client thread.",
     };
 
     @Inject private Client client;
