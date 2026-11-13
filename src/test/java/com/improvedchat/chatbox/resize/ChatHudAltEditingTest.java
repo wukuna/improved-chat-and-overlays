@@ -4,6 +4,8 @@ import com.improvedchat.ImprovedChatConfig;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.runelite.api.Client;
 import net.runelite.api.events.BeforeRender;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.EventBus;
@@ -13,6 +15,42 @@ import static org.mockito.Mockito.*;
 
 public class ChatHudAltEditingTest
 {
+    @Test public void altAnchorHeightCannotLeakIntoTicksScriptsOrNextFrameLayout()
+    {
+        for (int top : new int[]{InterfaceID.TOPLEVEL_OSRS_STRETCH, InterfaceID.TOPLEVEL_PRE_EOC})
+        {
+            Fixture f=new Fixture(top);
+            f.anchors.sync(-165);
+            f.anchors.dragHotkeyListener.hotkeyPressed();
+            AtomicInteger tickHeight=new AtomicInteger(),scriptHeight=new AtomicInteger(),frameHeight=new AtomicInteger();
+            f.bus.register(ClientTick.class,e->tickHeight.set(f.height.get()),0);
+            f.bus.register(ScriptPreFired.class,e->scriptHeight.set(f.height.get()),0);
+            f.bus.register(BeforeRender.class,e->{frameHeight.set(f.height.get());f.anchors.presentAnchorHeight();},0);
+            for (int frame=0;frame<60;frame++)
+            {
+                f.anchors.indicatorPresent.render(null);
+                f.anchors.indicatorRestore.render(null);
+                assertEquals(500,f.height.get());
+                if (frame%3==0)
+                {
+                    f.bus.post(new ClientTick());
+                    assertEquals("Bank tick must use layout height",665,tickHeight.get());
+                    f.bus.post(new ScriptPreFired(net.runelite.api.ScriptID.BANKMAIN_SIZE_CHECK));
+                    assertEquals(665,scriptHeight.get());
+                }
+                else if (frame%3==1)
+                {
+                    f.bus.post(new ScriptPreFired(net.runelite.api.ScriptID.BANKMAIN_BUILD));
+                    assertEquals("Scripts may run before ClientTick",665,scriptHeight.get());
+                }
+                f.bus.post(new BeforeRender());
+                assertEquals("Layout must be restored even without a client tick",665,frameHeight.get());
+                assertEquals(648,f.bankHeight.get());
+                assertEquals(0,f.reserve.get());
+            }
+        }
+    }
+
     @Test public void altEditingRestoresLayoutHeightBeforeBankClampsItsWindow()
     {
         for (int top : new int[]{InterfaceID.TOPLEVEL_OSRS_STRETCH, InterfaceID.TOPLEVEL_PRE_EOC})
@@ -76,6 +114,7 @@ public class ChatHudAltEditingTest
             doAnswer(c->{height.set(c.getArgument(0));return null;}).when(hud).setHeight(anyInt());
             doAnswer(c->{height.set(665-reserve.get());return null;}).when(hud).revalidate();
             anchors=new RuneLiteHudAnchors(client,config,null);
+            bus.register(anchors);
             bus.register(anchors.beforeDrawRestore);
             bus.register(BeforeRender.class,e->bankHeight.set(Math.min(648,hud.getHeight())),-20);
         }

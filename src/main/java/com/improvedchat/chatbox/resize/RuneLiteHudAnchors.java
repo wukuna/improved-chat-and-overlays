@@ -34,6 +34,8 @@ import com.improvedchat.ImprovedChatConfig;
 import com.improvedchat.chatbox.resize.internal.Widgets;
 import net.runelite.api.Client;
 import net.runelite.api.events.BeforeRender;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
@@ -153,6 +155,21 @@ public final class RuneLiteHudAnchors {
 
     private void restoreAfterOverlays() {
         if (!dragHotkeyHeld) restoreLayoutHeight();
+    }
+
+    @Subscribe(priority = 100)
+    public void onClientTick(ClientTick event) {
+        restoreLayoutHeight();
+    }
+
+    @Subscribe(priority = 100)
+    public void onScriptPreFired(ScriptPreFired event) {
+        restoreLayoutHeight();
+    }
+
+    @Subscribe(priority = 100)
+    public void onBeforeRender(BeforeRender event) {
+        restoreLayoutHeight();
     }
 
     private void restoreLayoutHeight() {

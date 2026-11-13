@@ -171,6 +171,7 @@ public class ChatResizeModule {
         events = new Events();
         eventBus.register(events);
         eventBus.register(fixedChat);
+        eventBus.register(hudAnchors);
         eventBus.register(hudAnchors.beforeDrawRestore);
     }
 
@@ -179,6 +180,7 @@ public class ChatResizeModule {
         events = null;
         if (e != null) eventBus.unregister(e);
         eventBus.unregister(fixedChat);
+        eventBus.unregister(hudAnchors);
         eventBus.unregister(hudAnchors.beforeDrawRestore);
     }
 
