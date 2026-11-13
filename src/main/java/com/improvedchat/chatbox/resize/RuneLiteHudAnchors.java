@@ -77,7 +77,7 @@ public final class RuneLiteHudAnchors {
     final BeforeDrawRestore beforeDrawRestore = new BeforeDrawRestore();
 
     final Overlay indicatorPresent = new HeightSlice(this::presentAnchorHeight, OverlayPosition.DYNAMIC);
-    final Overlay indicatorRestore = new HeightSlice(this::restoreLayoutHeight, OverlayPosition.TOP_LEFT);
+    final Overlay indicatorRestore = new HeightSlice(this::restoreAfterOverlays, OverlayPosition.TOP_LEFT);
 
     @Inject
     RuneLiteHudAnchors(Client client, ImprovedChatConfig config, ConfigManager configManager) {
@@ -151,8 +151,12 @@ public final class RuneLiteHudAnchors {
         return true;
     }
 
+    private void restoreAfterOverlays() {
+        if (!dragHotkeyHeld) restoreLayoutHeight();
+    }
+
     private void restoreLayoutHeight() {
-        if (!swapped || dragHotkeyHeld) return;
+        if (!swapped) return;
         int id = swappedHudId;
         swapped = false;
         swappedHudId = -1;

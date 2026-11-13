@@ -18,16 +18,10 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-11-private-chat-thread";
+    static final String RELEASE = "2026-11-12-alt-interface-height";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] UPDATES = {
-        "Added a resizable chat input dock with selectable buttons and left, right or bottom overlay attachment.",
-        "Overlay colors now share one Colors tab.",
-        "Added Static color, Duo Cycle, Duo Wave, RGB cycle and RGB wave for borders, text and timestamps.",
-        "Added independent Pulse effects and timers for each color control.",
-        "Renamed message color highlights to Specific Message Highlighting.",
-        "Added optional image and animated GIF backgrounds with adjustable opacity.",
-        "Private-chat visibility changes now safely update on the game client thread.",
+        "Keep bank and other interface sizes stable while holding Alt to edit overlays.",
     };
 
     @Inject private Client client;
