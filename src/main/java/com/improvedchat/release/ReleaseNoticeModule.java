@@ -18,10 +18,11 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-12-alt-interface-height";
+    static final String RELEASE = "2026-11-13-clean-contours";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] UPDATES = {
-        "Keep bank and other interface sizes stable while holding Alt to edit overlays.",
+        "New speech-bubble sidebar icon with clean contours and a green accent.",
+        "Full Twitch chat integration is in progress.",
     };
 
     @Inject private Client client;
