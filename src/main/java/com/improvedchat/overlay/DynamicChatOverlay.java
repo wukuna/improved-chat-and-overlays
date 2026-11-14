@@ -225,12 +225,12 @@ public class DynamicChatOverlay extends Overlay {
             lineAscent = Math.max(lineAscent, iconAscent(inputSegments.text, modIcons, fontSize, metrics));
         }
         int lineDescent = Math.max(2, metrics.getDescent() + 1);
-        int lineHeight = lineAscent + lineDescent + metrics.getLeading();
-        int inputExtra = inputSegments == null ? 0 : lineHeight;
-        int contentHeight = useDynamicHeight && !historyMode
-                ? renderableLines.size() * lineHeight + inputExtra
-                : maxMessages * lineHeight + inputExtra;
-        int widgetHeight = Math.max(lineHeight + paddingY * 2, contentHeight + paddingY * 2);
+        int glyphHeight = lineAscent + lineDescent + metrics.getLeading();
+        int lineHeight = Math.max(1, glyphHeight - 2 + overlayConfig.getLineSpacing());
+        int visibleLines = (useDynamicHeight && !historyMode ? renderableLines.size() : maxMessages)
+                + (inputSegments == null ? 0 : 1);
+        int contentHeight = glyphHeight + Math.max(0, visibleLines - 1) * lineHeight;
+        int widgetHeight = contentHeight + paddingY * 2;
 
         com.improvedchat.input.InputDockLayout.Frame frame = dockLayout == null ? null
                 : dockLayout.attach(globalConfig.inputDockPlacement(), widgetWidth, widgetHeight, Math.max(3, borderInset));
@@ -275,7 +275,7 @@ public class DynamicChatOverlay extends Overlay {
         int y = contentPaintHeight - paddingY - lineDescent;
         if (inputSegments != null) {
             drawInputPreview(graphics, inputSegments, y, widgetWidth,
-                    paddingX, lineAscent, lineHeight, fontSize, metrics, modIcons, drawShadow, currentTime);
+                    paddingX, lineAscent, glyphHeight, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 

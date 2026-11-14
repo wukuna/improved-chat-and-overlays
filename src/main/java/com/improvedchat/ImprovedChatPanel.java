@@ -379,6 +379,8 @@ public class ImprovedChatPanel extends PluginPanel {
         appearance.setLayout(new BoxLayout(appearance, BoxLayout.Y_AXIS));
         appearance.add(comboRow("Text Size", FontSize.values(), oc.getFontSize(), v -> { oc.setFontSize(v); saveOverlay(); }));
         appearance.add(comboRow("Text Font", FONT_FAMILIES, oc.getFontFamily(), v -> { oc.setFontFamily(v); saveOverlay(); }));
+        appearance.add(spinnerRow("Line spacing (px)", oc.getLineSpacing(), 0, 12, 1,
+                v -> { oc.setLineSpacing(v); saveOverlay(); }));
         appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));
         appearance.add(checkRow("Bold", oc.isBoldText(), v -> { oc.setBoldText(v); saveOverlay(); }));
         appearance.add(checkRow("Timestamps", oc.isShowTimestamp(), v -> { oc.setShowTimestamp(v); saveOverlay(); }));
@@ -1221,6 +1223,7 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Scroll history": return "Read session history with the mouse wheel. Messages stay visible without fading. Right-click Latest to return to new messages.";
             case "History messages": return "Maximum matching messages available from the shared session history (up to 5,000 captured messages). Nothing is saved to disk.";
             case "Text Font": return "Font used for every message in this overlay.";
+            case "Line spacing (px)": return "0 = compact; 2 = default. Applies to messages and input preview.";
             case "Text Alignment": return "Align message lines inside the overlay width.";
             case "Bold": return "Use the bold version of the selected font.";
             case "Timestamps": return "Prefix messages with a clock time or their age. Choose the style below.";

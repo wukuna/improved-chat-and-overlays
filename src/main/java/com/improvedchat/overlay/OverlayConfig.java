@@ -46,6 +46,7 @@ public final class OverlayConfig {
 
     private int paddingHorizontal = 4;
     private int paddingVertical = 3;
+    private int lineSpacing = 2;
     private int offsetX;
     private int offsetY;
     private PlacementMode placementMode = PlacementMode.FREE;
@@ -159,6 +160,7 @@ public final class OverlayConfig {
         setWidgetWidth(widgetWidth);
         setPaddingHorizontal(paddingHorizontal);
         setPaddingVertical(paddingVertical);
+        setLineSpacing(lineSpacing);
         setOffsetX(offsetX);
         setOffsetY(offsetY);
         getMessageTypes().remove(null);
@@ -257,6 +259,9 @@ public final class OverlayConfig {
 
     public int getPaddingVertical() { return paddingVertical; }
     public void setPaddingVertical(int value) { paddingVertical = clamp(value, 0, 50); }
+
+    public int getLineSpacing() { return clamp(lineSpacing, 0, 12); }
+    public void setLineSpacing(int value) { lineSpacing = clamp(value, 0, 12); }
 
     public int getOffsetX() { return offsetX; }
     public void setOffsetX(int value) { offsetX = clamp(value, -500, 500); }

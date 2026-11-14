@@ -105,6 +105,25 @@ public class ImprovedChatPanelTest {
         }return null;
     }
 
+    @Test public void lineSpacingControlSavesOnlyTheEditedOverlay() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            FakePlugin plugin = new FakePlugin();
+            plugin.configs.add(OverlayConfig.preset("Other", "private"));
+            ImprovedChatPanel panel = editingPanel(plugin);
+            editButtons(panel).get(0).doClick();
+            tabs(panel).setSelectedIndex(1);
+            javax.swing.JSpinner spacing = (javax.swing.JSpinner) namedComponent(editor(panel), "Line spacing (px)");
+            assertNotNull(spacing);
+            assertEquals(2, spacing.getValue());
+            assertTrue(spacing.getToolTipText().contains("compact"));
+            int saves = plugin.saves;
+            spacing.setValue(0);
+            assertEquals(0, plugin.configs.get(0).getLineSpacing());
+            assertEquals(2, plugin.configs.get(1).getLineSpacing());
+            assertEquals(saves + 1, plugin.saves);
+        });
+    }
+
     @Test public void editorPreservesScrollAndDisablesOverriddenFilters() throws Exception {
         FakePlugin plugin = new FakePlugin();
         ImprovedChatPanel[] holder = new ImprovedChatPanel[1];

@@ -23,6 +23,7 @@ public final class ReleaseNoticeModule
     private static final String[] UPDATES = {
         "New speech-bubble sidebar icon with clean contours and a green accent.",
         "Full Twitch chat integration is in progress.",
+        "Adjust each overlay's line spacing under Style > Text; 0 uses compact spacing.",
     };
 
     @Inject private Client client;

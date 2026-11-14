@@ -19,6 +19,8 @@ Give each conversation its own space. Build independent chat overlays with filte
 4. Use **Preview** while logged in to try its appearance with sample messages.
 5. For chat input buttons, open **Tools → Chat input dock → Show input dock**.
 
+In each overlay's **Style → Text**, set **Line spacing (px)** to **0** for compact lines or **2** for the default spacing. Each overlay remembers its own choice.
+
 [![Multiple chat overlay previews and their editors](docs/media/multiple-overlay-previews.png)](docs/media/multiple-overlay-previews.mp4)
 
 [Watch the 29-second overlay preview](docs/media/multiple-overlay-previews.mp4) for examples of independently styled text, frames and placement using sample messages.
