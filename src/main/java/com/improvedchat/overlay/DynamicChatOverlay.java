@@ -146,6 +146,10 @@ public class DynamicChatOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        return renderFrame(graphics,false);
+    }
+
+    private Dimension renderFrame(Graphics2D graphics,boolean measure) {
         applyPlacementPolicy(false);
         updateScrollInputState();
         if (!shouldRender()) {
@@ -236,6 +240,7 @@ public class DynamicChatOverlay extends Overlay {
                 : dockLayout.attach(globalConfig.inputDockPlacement(), widgetWidth, widgetHeight, Math.max(3, borderInset));
         int outerWidth = frame == null ? widgetWidth : frame.size.width;
         int outerHeight = frame == null ? widgetHeight : frame.size.height;
+        if(measure)return new Dimension(outerWidth,outerHeight);
         if (followPlayer) {
             translateToPlayer(graphics, placementMode, outerWidth, outerHeight);
         }
@@ -419,6 +424,23 @@ public class DynamicChatOverlay extends Overlay {
         graphics.translate(x - getBounds().x, y - getBounds().y);
     }
 
+    public String anchorState() {
+        if(overlayConfig.getPlacementMode()!=PlacementMode.FREE || client.getGameState()!=GameState.LOGGED_IN)return "UNAVAILABLE";
+        if(!overlayConfig.isShow())return "HIDDEN";
+        return shouldRender()?"VISIBLE":"OCCLUDED";
+    }
+    public void anchorReleasePolicy() {applyPlacementPolicy(true);}
+    private final BufferedImage anchorMetrics=new BufferedImage(1,1,BufferedImage.TYPE_INT_ARGB);
+    public java.awt.Rectangle anchorBounds() {
+        java.awt.Rectangle bounds=new java.awt.Rectangle(getBounds());
+        if(overlayConfig.getPlacementMode()==PlacementMode.FREE && shouldRender()) {
+            Graphics2D graphics=anchorMetrics.createGraphics();
+            try {Dimension size=renderFrame(graphics,true);if(size!=null)bounds.setSize(size);}
+            finally {graphics.dispose();}
+        }
+        if(bounds.isEmpty())bounds.setSize(getEffectiveWidth(),Math.max(24,overlayConfig.getMaxMessages()*18));
+        return bounds;
+    }
     private boolean shouldRender() {
         if (System.currentTimeMillis() < previewUntil) return client.getGameState() == GameState.LOGGED_IN;
         if (!overlayConfig.isShow() || client.getGameState() != GameState.LOGGED_IN) {

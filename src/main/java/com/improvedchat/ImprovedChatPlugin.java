@@ -335,6 +335,8 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     @Inject private com.improvedchat.input.ChatInputDock inputDock;
+    @Inject private com.improvedchat.anchors.ChatAnchorAdapter anchorAdapter;
+    public java.util.List<DynamicChatOverlay> anchorOverlays() { return new java.util.ArrayList<>(overlays); }
     @Inject private com.improvedchat.input.ChatInputDockOverlay inputDockOverlay;
 
     public com.improvedchat.input.ChatInputDock getInputDock() { return inputDock; }
@@ -362,6 +364,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         eventBus.register(inputDock);
         mouseManager.registerMouseListener(inputDock);
         overlayManager.add(inputDockOverlay);
+        anchorAdapter.start();
 
         for (OverlayConfig oc : overlayConfigs) {
             addOverlay(oc);
@@ -399,6 +402,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     @Override
     protected void shutDown() {
+        anchorAdapter.stop();
         overlayWheelReady = false;
         visibilityHotkeys.reset();
         keyManager.unregisterKeyListener(visibilityHotkeys);
@@ -1343,6 +1347,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
     }
 
     private void updateSmartPosition(net.runelite.client.ui.overlay.Overlay overlay) {
+        if(anchorAdapter!=null && anchorAdapter.owns(overlay))return;
         if (!config.smartPositioning()) {
             return;
         }
