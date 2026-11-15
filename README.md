@@ -1,5 +1,7 @@
 # Improved Chat and Overlays
 
+> This guide describes [Plugin Hub PR #20662](https://github.com/runelite/plugin-hub/pull/20662). Features from that update may not be in your installed Hub version yet.
+
 Give each conversation its own space. Build independent chat overlays with filters, fonts, colors, backgrounds and alerts. Switch where you type with a floating or attached input dock, and resize, collapse or completely hide the native chatbox.
 
 ## What you can do
@@ -19,11 +21,19 @@ Give each conversation its own space. Build independent chat overlays with filte
 4. Use **Preview** while logged in to try its appearance with sample messages.
 5. For chat input buttons, open **Tools → Chat input dock → Show input dock**.
 
+In each overlay's **Style → Text**, set **Line spacing (px)** to **0** for compact lines or **2** for the default spacing. Each overlay remembers its own choice.
+
 [![Multiple chat overlay previews and their editors](docs/media/multiple-overlay-previews.png)](docs/media/multiple-overlay-previews.mp4)
 
 [Watch the 29-second overlay preview](docs/media/multiple-overlay-previews.mp4) for examples of independently styled text, frames and placement using sample messages.
 
 **Recording note:** Twitch controls shown in these recordings are experimental and are not part of the public plugin. GIM chat is supported but not shown.
+
+## Visibility across restarts and anchor layouts
+
+The complete-hide hotkey remembers the chatbox choice for each RuneLite profile across logins and client restarts. Overlays configured to show while the chatbox is hidden follow that saved choice. If another chat plugin temporarily owns chatbox visibility, your saved preference is retained for when control returns.
+
+When Interface Layout's built-in **Anchors** feature is available, compatible free chat overlays and floating input docks can join a container. Enable **Edit anchors** there and use the RuneLite drag hotkey; an attached side/bottom dock follows its chat overlay. Drag a member outside the anchor to detach it. Each overlay keeps its own styling, filters and visibility rules.
 
 ## Input buttons change where you type
 
