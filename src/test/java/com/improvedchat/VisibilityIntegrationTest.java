@@ -52,6 +52,15 @@ public class VisibilityIntegrationTest {
         assertFalse(f.first.isShow());assertTrue(f.second.isShow());
         verify(f.config).setConfiguration(eq("improvedchat"),eq("overlayConfigs"),any(String.class));
     }
+    @Test public void savedOverlayVisibilityAndChatboxDependencySurviveReload() throws Exception {
+        Fixture f=new Fixture();f.first.setAlwaysVisible(false);f.second.setAlwaysVisible(true);
+        f.press();f.queue.remove(0).run();
+        org.mockito.ArgumentCaptor<String> json=org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(f.config).setConfiguration(eq("improvedchat"),eq("overlayConfigs"),json.capture());
+        java.util.List<OverlayConfig> restored=com.improvedchat.overlay.OverlayConfigStore.read(new Gson(),json.getValue());
+        assertFalse(restored.get(0).isShow());assertFalse(restored.get(0).isAlwaysVisible());
+        assertTrue(restored.get(1).isShow());assertTrue(restored.get(1).isAlwaysVisible());
+    }
     @Test public void profileSwitchAndShutdownDiscardQueuedPresses() throws Exception {
         Fixture f=new Fixture();f.press();f.plugin.onProfileChanged(new ProfileChanged());
         f.queue.remove(0).run();assertTrue(f.first.isShow());assertFalse(f.second.isShow());

@@ -321,6 +321,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         clientThread.invokeLater(() -> {
             if (!nativeChatActive || generation != nativeChatGeneration) return;
             chatboxVisibility.reset();
+            refreshChatboxVisibility();
             updatePmWidgetVisibility();
             for (DynamicChatOverlay overlay : overlays) overlayManager.remove(overlay);
             overlays.clear();
@@ -993,6 +994,15 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         messages.set(idx, old.withBody(ChatDisplayText.normalize(old.getType(), newBody)));
     }
 
+    private void refreshChatboxVisibility() {
+        long generation = nativeChatGeneration;
+        clientThread.invokeLater(() -> {
+            if (!nativeChatActive || generation != nativeChatGeneration) return;
+            chatboxVisibility.setAvailable(!modernChatCompatibility.snapshot().blocksVisibility()
+                    && !net.runelite.client.config.Keybind.NOT_SET.equals(config.hideChatboxHotkey()));
+        });
+    }
+
     private void reconcileNativeChatOwnership() {
         if (!nativeChatActive) return;
         reconcileNativeChatOwnership(modernChatCompatibility.snapshot());
@@ -1000,7 +1010,7 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
 
     private void reconcileNativeChatOwnership(ModernChatOwnership ownership) {
         if (!nativeChatActive) return;
-        if (ownership.blocksVisibility()) clientThread.invokeLater(chatboxVisibility::reset);
+        refreshChatboxVisibility();
         if (config.enableResizableChat() && !ownership.blocksGeometry()) {
             chatResizeModule.startUp();
         } else {
@@ -1113,11 +1123,9 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
         if (!event.getGroup().equals(CONFIG_GROUP)) {
             return;
         }
-        if ("hideChatboxHotkey".equals(event.getKey())) {
-            refreshVisibilityHotkeys();
-            if (net.runelite.client.config.Keybind.NOT_SET.equals(config.hideChatboxHotkey()))
-                clientThread.invokeLater(chatboxVisibility::reset);
-        }
+        if ("hideChatboxHotkey".equals(event.getKey())) refreshVisibilityHotkeys();
+        if ("hideChatboxHotkey".equals(event.getKey()) || "chatboxHidden".equals(event.getKey()))
+            refreshChatboxVisibility();
         if ("useChatFilter".equals(event.getKey()) || event.getKey().startsWith("inputDock")) refreshPanel();
         if ("hideSidePanel".equals(event.getKey())) {
             if (config.hideSidePanel()) {

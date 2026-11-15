@@ -17,6 +17,7 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public final class ChatboxVisibility {
     @Inject private Client client;
+    @Inject private net.runelite.client.config.ConfigManager configManager;
     @Inject private com.improvedchat.chatbox.resize.ChatDialogBoxes dialogs;
     private final Map<Widget, Boolean> owned = new IdentityHashMap<>();
     private boolean hidden;
@@ -24,7 +25,17 @@ public final class ChatboxVisibility {
 
     public boolean isHidden() { return hidden; }
 
-    public void toggle() { hidden = !hidden; apply(); }
+    public void toggle() {
+        hidden = !hidden;
+        configManager.setConfiguration("improvedchat", "chatboxHidden", hidden);
+        apply();
+    }
+
+    public void setAvailable(boolean available) {
+        hidden = available && Boolean.parseBoolean(configManager.getConfiguration("improvedchat", "chatboxHidden"));
+        scriptDepth = 0;
+        apply();
+    }
 
     public void reset() { hidden = false; scriptDepth = 0; restore(); }
 
@@ -69,7 +80,7 @@ public final class ChatboxVisibility {
     }
 
     @Subscribe public void onGameStateChanged(GameStateChanged event) {
-        if (event.getGameState() == GameState.LOGIN_SCREEN || event.getGameState() == GameState.HOPPING)
-            reset();
+        scriptDepth = 0;
+        apply();
     }
 }
