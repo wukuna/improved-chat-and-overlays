@@ -52,6 +52,33 @@ public final class RgbAnimation {
         }
     }
 
+    private static final java.util.Map<java.util.List<Object>, Paint> BORDER_GRADIENTS =
+            new java.util.LinkedHashMap<java.util.List<Object>, Paint>(16, .75f, true) {
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<java.util.List<Object>, Paint> eldest) {
+            return size() > 32;
+        }
+    };
+
+    private static synchronized Paint borderGradient(double length, int alpha, OverlayColorSettings settings) {
+        boolean duo = settings != null && settings.getMode() == AnimatedTextStyle.DUO_WAVE;
+        java.util.List<Object> key = java.util.Arrays.asList(length, alpha, duo,
+                duo ? settings.getPrimary().getRGB() : 0, duo ? settings.getSecondary().getRGB() : 0);
+        return BORDER_GRADIENTS.computeIfAbsent(key, ignored -> gradient(0, 0, 1, 0, length, 0, 0, alpha, settings));
+    }
+
+    private static void borderSegment(Graphics2D g, double x, double y, double dx, double dy,
+            double distance, double phaseOffset, Paint paint) {
+        java.awt.geom.AffineTransform transform = g.getTransform();
+        double offset = distance - phaseOffset;
+        try {
+            g.translate(x, y);
+            g.rotate(Math.atan2(dy, dx));
+            g.translate(-offset, 0);
+            g.setPaint(paint);
+            g.draw(new java.awt.geom.Line2D.Double(offset, 0, offset + Math.hypot(dx, dy), 0));
+        } finally { g.setTransform(transform); }
+    }
+
     private RgbAnimation() { }
 
     static double phase(long now, int seconds) {
@@ -92,28 +119,25 @@ public final class RgbAnimation {
         if (width <= 0 || height <= 0) return;
         if (rounded) {
             BorderPath path = borderPath(inset, width, height);
-            double distance = 0, phase = phase(now, seconds);
+            double distance = 0, phaseOffset = phase(now, seconds) * path.length;
+            Paint paint = borderGradient(path.length, alpha, settings);
             for (int i = 0; i < path.lines.size(); i++) {
                 java.awt.geom.Line2D.Double line = path.lines.get(i);
                 double segment = path.lengths.get(i);
-                g.setPaint(gradient(line.x1, line.y1, (line.x2 - line.x1) / segment,
-                        (line.y2 - line.y1) / segment, path.length, distance, phase, alpha, settings));
-                g.draw(line);
+                borderSegment(g, line.x1, line.y1, line.x2 - line.x1, line.y2 - line.y1,
+                        distance, phaseOffset, paint);
                 distance += segment;
             }
             return;
         }
         double perimeter = 2.0 * (width + height);
-        double phase = phase(now, seconds);
+        double phaseOffset = phase(now, seconds) * perimeter;
+        Paint paint = borderGradient(perimeter, alpha, settings);
         int right = inset + width, bottom = inset + height;
-        g.setPaint(gradient(inset, inset, 1, 0, perimeter, 0, phase, alpha, settings));
-        g.drawLine(inset, inset, right, inset);
-        g.setPaint(gradient(right, inset, 0, 1, perimeter, width, phase, alpha, settings));
-        g.drawLine(right, inset, right, bottom);
-        g.setPaint(gradient(right, bottom, -1, 0, perimeter, width + height, phase, alpha, settings));
-        g.drawLine(right, bottom, inset, bottom);
-        g.setPaint(gradient(inset, bottom, 0, -1, perimeter, 2.0 * width + height, phase, alpha, settings));
-        g.drawLine(inset, bottom, inset, inset);
+        borderSegment(g, inset, inset, width, 0, 0, phaseOffset, paint);
+        borderSegment(g, right, inset, 0, height, width, phaseOffset, paint);
+        borderSegment(g, right, bottom, -width, 0, width + height, phaseOffset, paint);
+        borderSegment(g, inset, bottom, 0, -height, 2.0 * width + height, phaseOffset, paint);
     }
 
     static int drawText(Graphics2D g, String text, int alpha, int x, int y,

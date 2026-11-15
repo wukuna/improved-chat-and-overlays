@@ -352,7 +352,7 @@ public class ChatInputDockTest {
         f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
     }
 
-    @Test public void childOcclusionUsesClippedBoundsAndAvoidsDuplicateTraversal() throws Exception {
+    @Test public void offscreenParentPrunesChildrenWithoutBlockingTheDock() throws Exception {
         Fixture f = new Fixture();
         Widget parent = widget(WidgetType.LAYER, new Rectangle(700, 0, 300, 500));
         Widget graphic = widget(WidgetType.GRAPHIC, new Rectangle(0, 0, 1000, 500));
@@ -360,7 +360,7 @@ public class ChatInputDockTest {
         when(parent.getDynamicChildren()).thenReturn(new Widget[]{graphic});
         when(f.client.getWidget(InterfaceID.ToplevelPreEoc.SIDE_CONTAINER)).thenReturn(parent);
         f.paint(false); assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
-        verify(graphic, times(1)).getBounds();
+        verifyNoInteractions(graphic);
     }
 
     @Test public void queuedSwitchRechecksMovedVisibleWidgets() throws Exception {

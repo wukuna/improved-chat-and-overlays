@@ -22,8 +22,12 @@ public final class ReleaseNoticeModule
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] UPDATES = {
         "New speech-bubble sidebar icon with clean contours and a green accent.",
-        "Full Twitch chat integration is in progress.",
+        "The hidden chatbox choice now survives logins and restarts for each profile.",
+        "Input dock buttons reliably select where you type while preserving your visible chat tab and draft.",
         "Adjust each overlay's line spacing under Style > Text; 0 uses compact spacing.",
+        "Compatible free overlays and input docks can join Interface Layout anchors when that feature is available.",
+        "Reduced dock and animated-border rendering work.",
+        "Full Twitch chat integration is in progress."
     };
 
     @Inject private Client client;

@@ -166,4 +166,23 @@ public class RgbAnimationTest {
         } finally { g.dispose(); }
         return image;
     }
+    @Test public void cachedBorderPaintTracksColorsAndPreservesTransformAndClip() {
+        OverlayColorSettings settings=new OverlayColorSettings();
+        settings.setMode(AnimatedTextStyle.DUO_WAVE);
+        settings.setPrimary(Color.RED);settings.setSecondary(Color.BLUE);
+        BufferedImage image=new BufferedImage(260,120,BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics=image.createGraphics();
+        try {
+            graphics.translate(10,12);graphics.scale(1.25,1.25);graphics.setClip(0,0,180,60);
+            java.awt.geom.AffineTransform transform=graphics.getTransform();
+            java.awt.Rectangle clip=graphics.getClipBounds();
+            RgbAnimation.drawBorder(graphics,1,160,40,255,1300,8,true,settings);
+            assertEquals(transform,graphics.getTransform());assertEquals(clip,graphics.getClipBounds());
+            int[] first=image.getRGB(0,0,260,120,null,0,260);
+            settings.setPrimary(Color.GREEN);settings.setSecondary(Color.WHITE);
+            RgbAnimation.drawBorder(graphics,1,160,40,255,1300,8,true,settings);
+            assertFalse(java.util.Arrays.equals(first,image.getRGB(0,0,260,120,null,0,260)));
+            assertEquals(0,image.getRGB(100,40));assertEquals(0,image.getRGB(0,0));
+        } finally { graphics.dispose(); }
+    }
 }

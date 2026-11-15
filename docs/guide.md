@@ -1,5 +1,7 @@
 # Improved Chat and Overlays
 
+For the current controls, restart behavior and optional Interface Layout anchor support, start with the [README](../README.md).
+
 Give each conversation its own space with customizable chat overlays, filters, fonts, colors and alerts. Use a floating or attached button dock to switch where you type, and resize, collapse or completely hide the native chatbox. Each feature can be enabled independently.
 
 [Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Inspiration and recipe](#inspiration-and-recipe) · [Support](#support) · [License and attribution](#license-and-attribution)
@@ -85,7 +87,7 @@ Turn off **Messages → Show channel names** to remove the bracketed clan/friend
 
 Set **Messages → Messages & Visibility → Toggle hotkey** in each overlay's editor. Click the field and press a combination; Escape clears it. One press toggles every overlay assigned to that combination, including disabled overlays. The Enabled state is saved with the overlay; its **Show overlay** condition still applies. Holding a key does not repeat the toggle.
 
-In regular chatbox settings, **Hide entire chatbox hotkey** hides the chat area and all chat buttons, including All and Report. Press it again to restore their previous state. This is separate from **Collapse Chat Keybind**, works without enabling collapse, and leaves dialogue prompts usable. Full hiding resets on logout or profile change; clearing its binding or disabling the plugin also restores it. Modern Chat's visibility controls take precedence. Use distinct keys for collapse, resizing and full hiding.
+In regular chatbox settings, **Hide entire chatbox hotkey** hides the chat area and all chat buttons, including All and Report. Press it again to restore their previous state. This is separate from **Collapse Chat Keybind**, works without enabling collapse, and leaves dialogue prompts usable. The chosen hidden state is saved per profile across logouts and client restarts. Disabling the plugin restores the native chatbox without erasing that preference. If Modern Chat temporarily owns visibility, Improved Chat preserves your saved choice for when it can resume control. Use distinct keys for collapse, resizing and full hiding.
 
 ### Scrollable session history
 

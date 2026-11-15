@@ -126,14 +126,14 @@ public class ChatInputDock extends MouseAdapter {
         return false;
     }
 
-    private Area coveredWidgets() {
+    private Area coveredWidgets(Rectangle target) {
         Area covered = new Area();
         Set<Widget> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         int[] ids = {InterfaceID.Toplevel.MAPCONTAINER, InterfaceID.Toplevel.SIDE3,
                 InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER, InterfaceID.ToplevelOsrsStretch.SIDE_MENU,
                 InterfaceID.ToplevelPreEoc.MAP_CONTAINER, InterfaceID.ToplevelPreEoc.SIDE_CONTAINER};
         for (int id : ids) {
-            coverWidget(client.getWidget(id), null, covered, visited, 0);
+            coverWidget(client.getWidget(id), target, covered, visited, 0);
         }
         return covered;
     }
@@ -173,7 +173,8 @@ public class ChatInputDock extends MouseAdapter {
             int selected = client.getVarcIntValue(VarClientID.CHATBOX_MODE);
             List<Shape> regions = new ArrayList<>();
             List<Boolean> enabled = new ArrayList<>();
-            Area covered = floating ? new Area() : coveredWidgets();
+            Rectangle dockBounds = g.getTransform().createTransformedShape(new Rectangle(layout.size)).getBounds();
+            Area covered = floating ? new Area() : coveredWidgets(dockBounds);
             for (int i = 0; i < layout.modes.size(); i++) {
                 ChatInputMode mode = layout.modes.get(i);
                 Rectangle rect = layout.buttons.get(i);
@@ -251,7 +252,7 @@ public class ChatInputDock extends MouseAdapter {
                 ChatInputMode mode = hit.modes.get(i);
                 clientThread.invokeLater(() -> {
                     if (painted != null && hit.generation == generation.get() && canSwitch() && mode.selected(config) && mode.available(client)
-                            && (hit.floating || !coveredWidgets().contains(event.getPoint()))) {
+                            && (hit.floating || !coveredWidgets(new Rectangle(event.getX(), event.getY(), 1, 1)).contains(event.getPoint()))) {
                         client.setVarcIntValue(VarClientID.CHATBOX_MODE, mode.value);
                         routedMode = mode;
                         if (canRebuildInput()) client.runScript(CHAT_INPUT_WIDGET_BUILD);

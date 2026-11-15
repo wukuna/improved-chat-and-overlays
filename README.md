@@ -27,6 +27,12 @@ In each overlay's **Style → Text**, set **Line spacing (px)** to **0** for com
 
 **Recording note:** Twitch controls shown in these recordings are experimental and are not part of the public plugin. GIM chat is supported but not shown.
 
+## Visibility across restarts and anchor layouts
+
+The complete-hide hotkey remembers the chatbox choice for each RuneLite profile across logins and client restarts. Overlays configured to show while the chatbox is hidden follow that saved choice. If another chat plugin temporarily owns chatbox visibility, your saved preference is retained for when control returns.
+
+When Interface Layout's built-in **Anchors** feature is available, compatible free chat overlays and floating input docks can join a container. Enable **Edit anchors** there and use the RuneLite drag hotkey; an attached side/bottom dock follows its chat overlay. Drag a member outside the anchor to detach it. Each overlay keeps its own styling, filters and visibility rules.
+
 ## Input buttons change where you type
 
 Public, Clan, Channel (Friends Chat) and GIM are input destinations. GIM is offered when a group channel is available. The buttons preserve the visible chat tab and draft; clicking one does not send a message.
