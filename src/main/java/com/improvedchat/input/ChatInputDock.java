@@ -26,6 +26,8 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.ScriptCallbackEvent;
+import net.runelite.api.events.VarClientIntChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarClientID;
 import net.runelite.client.callback.ClientThread;
@@ -43,6 +45,7 @@ public class ChatInputDock extends MouseAdapter {
     private final AtomicLong generation = new AtomicLong();
     private volatile boolean active;
     private volatile HitMap painted;
+    private volatile ChatInputMode routedMode;
     private boolean rendered;
     private boolean pressed;
     private boolean clicked;
@@ -52,13 +55,35 @@ public class ChatInputDock extends MouseAdapter {
         this.client = client; this.clientThread = clientThread; this.config = config;
     }
 
-    public void startUp() { invalidate(); active = true; }
-    public void shutDown() { active = false; invalidate(); }
+    public void startUp() { routedMode = null; invalidate(); active = true; }
+    public void shutDown() { active = false; routedMode = null; invalidate(); }
     public void invalidate() { generation.incrementAndGet(); painted = null; }
-    @Subscribe public void onProfileChanged(ProfileChanged event) { invalidate(); }
-    @Subscribe public void onGameStateChanged(GameStateChanged event) { invalidate(); }
+    @Subscribe public void onProfileChanged(ProfileChanged event) { routedMode = null; invalidate(); }
+    @Subscribe public void onGameStateChanged(GameStateChanged event) {
+        if (event.getGameState() != GameState.LOGGED_IN && event.getGameState() != GameState.LOADING) routedMode = null;
+        invalidate();
+    }
     @Subscribe public void onConfigChanged(ConfigChanged event) {
-        if (ImprovedChatConfig.GROUP.equals(event.getGroup())) invalidate();
+        if (ImprovedChatConfig.GROUP.equals(event.getGroup())) {
+            ChatInputMode mode = routedMode;
+            if (!config.inputDockEnabled() || (mode != null && !mode.selected(config))) routedMode = null;
+            invalidate();
+        }
+    }
+    @Subscribe public void onVarClientIntChanged(VarClientIntChanged event) {
+        if (event.getIndex() == VarClientID.CHATBOX_MODE) routedMode = null;
+    }
+    @Subscribe public void onScriptCallbackEvent(ScriptCallbackEvent event) {
+        if (!"chatDefaultReturn".equals(event.getEventName()) || !active || !config.inputDockEnabled()
+                || client.getGameState() != GameState.LOGGED_IN) return;
+        ChatInputMode mode = routedMode;
+        if (mode == null || !mode.selected(config) || client.getVarcIntValue(VarClientID.CHATBOX_MODE) != mode.value) return;
+        int[] stack = client.getIntStack();
+        int size = client.getIntStackSize();
+        if (stack == null || size < 3 || size > stack.length || stack[size - 3] != 0 || stack[size - 1] != 0) return;
+        String draft = client.getVarcStrValue(VarClientID.CHATINPUT);
+        if (draft == null || draft.startsWith("/") || draft.startsWith("::")) return;
+        stack[size - 2] = -1;
     }
     @Subscribe public void onBeforeRender(BeforeRender event) { rendered = false; }
     public void finishFrame() { if (!rendered) painted = null; }
@@ -80,11 +105,14 @@ public class ChatInputDock extends MouseAdapter {
 
     public boolean canSwitch() {
         return active && config.inputDockEnabled() && client.getGameState() == GameState.LOGGED_IN
-                && client.getLocalPlayer() != null && !client.isMenuOpen() && !client.isWidgetSelected()
-                && !client.isDraggingWidget() && !TopLevelModals.hasOpenModal(client)
+                && client.getLocalPlayer() != null && !client.isMenuOpen()
+                && !(client.isDraggingWidget() && client.getDraggedWidget() != null);
+    }
+
+    private boolean canRebuildInput() {
+        return client.getWidget(InterfaceID.Chatbox.INPUT) != null
                 && client.getVarcIntValue(VarClientID.MESLAYERMODE) == 0
-                && !hasChatDialog()
-                && client.getWidget(InterfaceID.Chatbox.INPUT) != null;
+                && !TopLevelModals.hasOpenModal(client) && !hasChatDialog();
     }
 
     private boolean hasChatDialog() {
@@ -225,7 +253,8 @@ public class ChatInputDock extends MouseAdapter {
                     if (painted != null && hit.generation == generation.get() && canSwitch() && mode.selected(config) && mode.available(client)
                             && (hit.floating || !coveredWidgets().contains(event.getPoint()))) {
                         client.setVarcIntValue(VarClientID.CHATBOX_MODE, mode.value);
-                        client.runScript(CHAT_INPUT_WIDGET_BUILD);
+                        routedMode = mode;
+                        if (canRebuildInput()) client.runScript(CHAT_INPUT_WIDGET_BUILD);
                     }
                 });
                 break;

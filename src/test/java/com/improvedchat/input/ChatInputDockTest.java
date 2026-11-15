@@ -17,6 +17,8 @@ import net.runelite.api.Client;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.FriendsChatManager;
 import net.runelite.api.GameState;
+import net.runelite.api.HashTable;
+import net.runelite.api.WidgetNode;
 import net.runelite.api.Player;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.events.BeforeRender;
@@ -142,20 +144,108 @@ public class ChatInputDockTest {
         assertEquals(1, f.queued.size());
     }
 
-    @Test public void staleClicksAreCancelledAcrossShutdownProfileLogoutDialogAndMembershipChanges() throws Exception {
+    @Test public void staleClicksAreCancelledAcrossShutdownProfileLogoutDragAndMembershipChanges() throws Exception {
         for (int scenario = 0; scenario < 7; scenario++) {
             Fixture f = new Fixture(); f.paint(true); f.press(ChatInputMode.CLAN, 0);
             switch (scenario) {
                 case 0: f.dock.shutDown(); f.dock.startUp(); break;
                 case 1: f.dock.onProfileChanged(new ProfileChanged()); break;
                 case 2: when(f.client.getGameState()).thenReturn(GameState.LOGIN_SCREEN); break;
-                case 3: when(f.client.getVarcIntValue(VarClientID.MESLAYERMODE)).thenReturn(3); break;
+                case 3:
+                    when(f.client.isDraggingWidget()).thenReturn(true);
+                    when(f.client.getDraggedWidget()).thenReturn(mock(Widget.class));
+                    break;
                 case 4: when(f.client.getClanChannel(ClanID.CLAN)).thenReturn(null); break;
                 case 5: f.settings.enabled = false; break;
                 default: when(f.client.isMenuOpen()).thenReturn(true);
             }
             f.runQueued(); verify(f.client, never()).setVarcIntValue(anyInt(), anyInt());
         }
+    }
+
+    @Test public void inputModeSelectionDoesNotRequireNativeChatToBeAvailable() throws Exception {
+        for (int scenario = 0; scenario < 4; scenario++) {
+            for (boolean floating : new boolean[]{true, false}) {
+                Fixture f = new Fixture();
+                switch (scenario) {
+                    case 0: when(f.client.getVarcIntValue(VarClientID.MESLAYERMODE)).thenReturn(3); break;
+                    case 1: when(f.client.getWidget(InterfaceID.Chatbox.INPUT)).thenReturn(null); break;
+                    case 2:
+                        Widget layer = mock(Widget.class);
+                        when(f.client.getWidget(InterfaceID.Chatbox.MES_LAYER)).thenReturn(layer);
+                        when(layer.isHidden()).thenReturn(false);
+                        break;
+                    default:
+                        HashTable<WidgetNode> components = mock(HashTable.class);
+                        when(components.get(InterfaceID.ToplevelOsrsStretch.MAINMODAL)).thenReturn(mock(WidgetNode.class));
+                        when(f.client.getComponentTable()).thenReturn(components);
+                        break;
+                }
+                f.paint(floating);
+                assertTrue(f.dock.canSwitch());
+                assertTrue(f.press(ChatInputMode.CLAN, 0).isConsumed());
+                f.runQueued();
+                verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 2);
+                verify(f.client, never()).runScript(any(Object[].class));
+                verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
+                verify(f.client, never()).setVarcIntValue(eq(VarClientID.MESLAYERMODE), anyInt());
+            }
+        }
+    }
+
+    @Test public void selectingAnItemDoesNotDisableTheInputButtons() throws Exception {
+        Fixture f = new Fixture();
+        when(f.client.isWidgetSelected()).thenReturn(true);
+        f.paint(false);
+        assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+        f.runQueued();
+        verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 0);
+        verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
+    }
+
+    @Test public void releasedWidgetDragFlagDoesNotDisableAnyDockButton() throws Exception {
+        for (boolean floating : new boolean[]{false, true}) {
+            Fixture f = new Fixture(); f.settings.scale = 70;
+            f.settings.placement = floating ? InputDockPlacement.FLOATING : InputDockPlacement.BOTTOM;
+            when(f.client.isDraggingWidget()).thenReturn(true);
+            when(f.client.getDraggedWidget()).thenReturn(null);
+            f.paint(floating);
+            assertTrue("A completed drag leaves the flag set without a dragged widget", f.dock.canSwitch());
+            for (ChatInputMode mode : f.layout.modes) {
+                clearInvocations(f.client);
+                assertTrue(f.press(mode, 0).isConsumed());
+                verifyNoInteractions(f.client);
+                f.runQueued();
+                verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, mode.value);
+                verify(f.client, never()).setVarcStrValue(anyInt(), anyString());
+            }
+        }
+    }
+
+    @Test public void buttonsRecoverAfterWidgetDragEndsWithoutResettingDragFlag() throws Exception {
+        for (boolean floating : new boolean[]{false, true}) {
+            Fixture f = new Fixture();
+            when(f.client.isDraggingWidget()).thenReturn(true);
+            when(f.client.getDraggedWidget()).thenReturn(mock(Widget.class));
+            f.paint(floating);
+            assertFalse(f.dock.canSwitch());
+            assertFalse(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            assertTrue(f.queued.isEmpty());
+            when(f.client.getDraggedWidget()).thenReturn(null);
+            f.paint(floating);
+            assertTrue(f.press(ChatInputMode.PUBLIC, 0).isConsumed());
+            f.runQueued();
+            verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 0);
+        }
+    }
+
+    @Test public void completedDragFlagDoesNotCancelAnAlreadyQueuedInputSelection() throws Exception {
+        Fixture f = new Fixture(); f.paint(false);
+        assertTrue(f.press(ChatInputMode.CLAN, 0).isConsumed());
+        when(f.client.isDraggingWidget()).thenReturn(true);
+        when(f.client.getDraggedWidget()).thenReturn(null);
+        f.runQueued();
+        verify(f.client).setVarcIntValue(VarClientID.CHATBOX_MODE, 2);
     }
 
     @Test public void realEventBusClearsHiddenBoundsAndInvalidatesQueuedClicks() throws Exception {
